@@ -10,7 +10,7 @@ export default function LoginForm() {
   const next = search.get("next") || "/dashboard";
 
   const login = useLoginMutation()
-  const [email, setEmail] = useState("doctor@test.com");
+  const [email, setEmail] = useState("doctor1@test.com");
   const [password, setPassword] = useState("Password123!"); 
 
   async function onSubmit(e: React.FormEvent) {
