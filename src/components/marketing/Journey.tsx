@@ -33,7 +33,9 @@ const LeftPanel = () => {
                 </div>
                 {i === leftPanelData.length - 1 ? (
                   <div className='flex items-center'>
-                    {item.image?.map((item, i) => {
+                    {(item.image ?? [])
+                      .filter((img): img is string => typeof img === "string")
+                      .map((item, i) => {
                       return (
                         <Image key={i} width={50} height={50} alt='' className={`border rounded-xl border-3 border-white ${i === 0 ? "ml-0 -rotate-6" : "-ml-4 -rotate-6"}`} src={item}/>
                       )
@@ -92,13 +94,17 @@ const MidPanel = () => {
 }
 
 const RightPanel = () => {
+  const rightPanelImages = rightPanelData
+    .filter((item): item is { image: string } => typeof item.image === "string")
+    .slice(0, 2);
+
   return (
     <div className='border border-accent/15 bg-white p-8 rounded-3xl relative overflow-hidden group cursor-pointer'>
       <Image src={"/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
       <MiniTitle title='1-1 Consultation' desc='Doctors through video consultations' />
       <div className='mt-10 h-[270px] flex flex-col justify-between relative'>
         <div className='flex items-center justify-center relative'>
-          {rightPanelData.slice(0, 2).map((item, i) => {
+          {rightPanelImages.map((item, i) => {
             return (
               <Image key={i} src={item.image} alt='' width={220} height={200} className={`${i === 0 ? "z-10 rotate-12 group-hover:z-0" : "z-0 -rotate-3 group-hover:z-10" } absolute left-1/2 -translate-x-1/2 top-6 border-6 border-white rounded-2xl transition-all duration-400`}/>
             )

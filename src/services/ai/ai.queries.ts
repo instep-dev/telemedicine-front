@@ -15,6 +15,9 @@ export function useAiResultsQuery(
     },
     enabled: !!accessToken && enabled,
     retry: false,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
   });
 }
 
@@ -31,5 +34,26 @@ export function useAiResultDetailQuery(
     },
     enabled: !!accessToken && !!id && enabled,
     retry: false,
+  });
+}
+
+export function useAiResultsWatcherQuery(
+  accessToken: string | null,
+  enabled: boolean = true,
+) {
+  return useQuery({
+    queryKey: ["ai-results-watcher"],
+    queryFn: () => {
+      if (!accessToken) throw new Error("No access token");
+      return aiApi.getAiResults(accessToken, {
+        limit: 50,
+        sort: "newest",
+      });
+    },
+    enabled: !!accessToken && enabled,
+    retry: false,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
   });
 }

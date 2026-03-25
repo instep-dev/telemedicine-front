@@ -57,23 +57,90 @@ function getInitials(name?: string | null) {
   return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
 }
 
-function getStatusBucket(aiStatus?: string | null) {
-  const value = (aiStatus ?? "").toUpperCase();
+function normalizeStatus(aiStatus?: string | null) {
+  return (aiStatus ?? "").trim().toUpperCase();
+}
 
-  if (
-    value.includes("SUCCESS") ||
-    value.includes("DONE") ||
-    value.includes("COMPLETED") ||
-    value.includes("READY")
-  ) {
-    return "completed";
+function getStatusBucket(aiStatus?: string | null) {
+  const value = normalizeStatus(aiStatus);
+
+  if (value === "SUCCESS") {
+    return "success";
   }
 
-  if (value.includes("FAIL") || value.includes("ERROR")) {
+  if (value === "FAILED" || value.includes("ERROR")) {
     return "failed";
   }
 
   return "in-progress";
+}
+
+function getStageLabel(aiStatus?: string | null) {
+  const value = normalizeStatus(aiStatus);
+
+  if (!value) return "Waiting to start";
+  if (value === "PENDING") return "Waiting in queue";
+  if (value === "IN_PROGRESS") return "AI processing started";
+  if (value.includes("WAITING_RECORDING")) return "Waiting for recording";
+  if (value.includes("RECORDING_STARTED")) return "Recording started";
+  if (value.includes("RECORDING_COMPLETED")) return "Recording completed";
+  if (value.includes("COMPOSITION_STARTED")) return "Preparing video composition";
+  if (value.includes("DOWNLOADING_RECORDING")) return "Downloading recording";
+  if (value.includes("MEDIA_READY")) return "Media ready";
+  if (value.includes("EXTRACTING_AUDIO")) return "Extracting audio from MP4";
+  if (value.includes("TRANSCRIBING")) return "Transcribing with Faster Whisper";
+  if (value.includes("TRANSCRIPTION_READY")) return "Transcript ready";
+  if (value.includes("SUMMARIZING")) return "Generating SOAP summary with Gemini";
+  if (value === "SUCCESS") return "Success";
+  if (value === "FAILED" || value.includes("ERROR")) return "Failed";
+
+  return value.replaceAll("_", " ");
+}
+
+function getEstimatedTimeText(
+  aiStatus?: string | null,
+  createdAt?: string | null,
+  durationSec?: number | null,
+) {
+  const bucket = getStatusBucket(aiStatus);
+  if (bucket === "success") return "Finished";
+  if (bucket === "failed") return "Stopped";
+
+  const status = normalizeStatus(aiStatus);
+  const callMinutes = durationSec ? Math.max(1, Math.ceil(durationSec / 60)) : 1;
+
+  let estimatedTotalSec = 180;
+
+  if (callMinutes <= 2) estimatedTotalSec = 90;
+  else if (callMinutes <= 5) estimatedTotalSec = 150;
+  else if (callMinutes <= 10) estimatedTotalSec = 240;
+  else if (callMinutes <= 20) estimatedTotalSec = 420;
+  else estimatedTotalSec = 600;
+
+  if (status.includes("WAITING_RECORDING")) estimatedTotalSec = 120;
+  if (status.includes("COMPOSITION")) estimatedTotalSec = 150;
+  if (status.includes("DOWNLOADING_RECORDING")) estimatedTotalSec = 90;
+  if (status.includes("EXTRACTING_AUDIO")) estimatedTotalSec = 120;
+  if (status.includes("TRANSCRIBING")) estimatedTotalSec = Math.max(120, Math.floor(estimatedTotalSec * 0.7));
+  if (status.includes("SUMMARIZING")) estimatedTotalSec = Math.max(60, Math.floor(estimatedTotalSec * 0.35));
+
+  if (!createdAt) {
+    const mins = Math.ceil(estimatedTotalSec / 60);
+    return `Estimasi sekitar ${mins} menit`;
+  }
+
+  const started = new Date(createdAt).getTime();
+  const now = Date.now();
+  const elapsedSec = Math.max(0, Math.floor((now - started) / 1000));
+  const remainingSec = Math.max(15, estimatedTotalSec - elapsedSec);
+
+  if (remainingSec < 60) return `Estimasi ${remainingSec} detik lagi`;
+
+  const min = Math.floor(remainingSec / 60);
+  const sec = remainingSec % 60;
+
+  if (sec === 0) return `Estimasi ${min} menit lagi`;
+  return `Estimasi ${min} menit ${sec} detik lagi`;
 }
 
 export default function AiSummary() {
@@ -105,7 +172,7 @@ export default function AiSummary() {
 
   const grouped = useMemo(() => {
     return {
-      completed: items.filter((item) => getStatusBucket(item.aiStatus) === "completed"),
+      success: items.filter((item) => getStatusBucket(item.aiStatus) === "success"),
       inProgress: items.filter((item) => getStatusBucket(item.aiStatus) === "in-progress"),
       failed: items.filter((item) => getStatusBucket(item.aiStatus) === "failed"),
     };
@@ -113,7 +180,7 @@ export default function AiSummary() {
 
   const filterData = [
     { title: "All", value: "all", count: items.length },
-    { title: "Completed", value: "completed", count: grouped.completed.length },
+    { title: "Success", value: "success", count: grouped.success.length },
     { title: "In Progress", value: "in-progress", count: grouped.inProgress.length },
     { title: "Failed", value: "failed", count: grouped.failed.length },
   ];
@@ -127,11 +194,11 @@ export default function AiSummary() {
       tasks: grouped.inProgress,
     },
     {
-      key: "completed",
-      title: "Completed",
-      count: grouped.completed.length,
+      key: "success",
+      title: "Success",
+      count: grouped.success.length,
       tone: "bg-green-50 text-green-600",
-      tasks: grouped.completed,
+      tasks: grouped.success,
     },
     {
       key: "failed",
@@ -184,11 +251,17 @@ export default function AiSummary() {
 
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" startIcon={<DownloadIcon />}>
-              Filter & Sort
+              {isFetching ? "Refreshing..." : "Auto Refresh 5s"}
             </Button>
             <CreateRoomButton />
           </div>
         </div>
+
+        {grouped.inProgress.length > 0 && (
+          <div className="mx-6 mb-0 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+            {grouped.inProgress.length} AI summary sedang diproses di background.
+          </div>
+        )}
 
         {isLoading ? (
           <div className="border-t border-gray-100 p-6 text-sm text-gray-500">
@@ -234,18 +307,25 @@ export default function AiSummary() {
                         const bucket = getStatusBucket(task.aiStatus);
 
                         const badgeTone =
-                          bucket === "completed"
+                          bucket === "success"
                             ? "bg-green-50 text-green-600"
                             : bucket === "failed"
                               ? "bg-red-50 text-red-600"
                               : "bg-yellow-50 text-yellow-600";
 
                         const avatarTone =
-                          bucket === "completed"
+                          bucket === "success"
                             ? "bg-green-100 text-green-700"
                             : bucket === "failed"
                               ? "bg-red-100 text-red-700"
                               : "bg-yellow-100 text-yellow-700";
+
+                        const stageLabel = getStageLabel(task.aiStatus);
+                        const estimateText = getEstimatedTimeText(
+                          task.aiStatus,
+                          task.createdAt,
+                          task.callSession?.durationSec,
+                        );
 
                         return (
                           <div
@@ -267,6 +347,22 @@ export default function AiSummary() {
                               >
                                 {getInitials(task.doctorName)}
                               </div>
+                            </div>
+
+                            <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                              <p className="text-xs font-medium text-gray-700">
+                                Stage: {stageLabel}
+                              </p>
+                              {bucket === "in-progress" && (
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {estimateText}
+                                </p>
+                              )}
+                              {bucket === "failed" && task.aiError && (
+                                <p className="mt-1 line-clamp-2 text-xs text-red-500">
+                                  {task.aiError}
+                                </p>
+                              )}
                             </div>
 
                             <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">

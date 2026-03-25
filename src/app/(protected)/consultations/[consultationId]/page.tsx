@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Video, { type Room, type RemoteParticipant, type RemoteTrack } from "twilio-video";
-
+import { toast } from "react-toastify";
 import { authStore } from "@/services/auth/auth.store";
 import {
   useDoctorTokenMutation,
   useEndCallMutation,
-  useCallResultQuery,
 } from "@/services/twillio/twilio.queries";
 import { useConsultationStore } from "@/services/consultations/consultations.store";
 
@@ -26,14 +25,9 @@ export default function DoctorCallPage() {
 
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
-
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
-
   const [isEndingCall, setIsEndingCall] = useState(false);
-  const [shouldPollResult, setShouldPollResult] = useState(false);
-  const [mp4Url, setMp4Url] = useState<string | null>(null);
-  const [processingText, setProcessingText] = useState<string | null>(null);
 
   const roomRef = useRef<Room | null>(null);
   const localRef = useRef<HTMLDivElement | null>(null);
@@ -48,29 +42,6 @@ export default function DoctorCallPage() {
     if (String(activeConsultation.id) !== String(consultationId)) return null;
     return activeConsultation.url;
   }, [activeConsultation, consultationId]);
-
-  const callResultQuery = useCallResultQuery(
-    accessToken,
-    consultationId,
-    shouldPollResult && !!consultationId,
-  );
-
-  useEffect(() => {
-    const result = callResultQuery.data;
-    if (!result) return;
-
-    if (result.callSession?.status === "COMPLETED") {
-      setProcessingText("Recording ready");
-      setMp4Url(result.playableUrl ?? result.callSession.mediaUrl ?? null);
-      setShouldPollResult(false);
-    }
-
-    if (result.callSession?.status === "FAILED") {
-      setErrMsg(result.callSession.errorMessage ?? "Recording/composition failed");
-      setProcessingText(null);
-      setShouldPollResult(false);
-    }
-  }, [callResultQuery.data]);
 
   function clearContainers() {
     if (localRef.current) localRef.current.innerHTML = "";
@@ -289,32 +260,37 @@ export default function DoctorCallPage() {
 
     setErrMsg(null);
     setIsEndingCall(true);
-    setProcessingText("Ending call and preparing MP4...");
 
     try {
       await endCallMutation.mutateAsync(consultationId);
 
       cleanupRoom();
       hasStartedRef.current = false;
-      setShouldPollResult(true);
+      setActiveConsultation(null);
+
+      toast.info("Call ended. AI summary sedang diproses di background.");
+
+      router.replace("/ai-summary");
     } catch (err: any) {
       setErrMsg(err?.response?.data?.message ?? err?.message ?? "Failed to end call");
-      setProcessingText(null);
-    } finally {
       setIsEndingCall(false);
     }
   }
 
-  function leaveToDashboard() {
+  function leaveToSummary() {
     setActiveConsultation(null);
-    router.replace("/dashboard");
+    cleanupRoom();
+    router.replace("/ai-summary");
   }
 
   async function copyLink() {
     if (!patientUrl) return;
     try {
       await navigator.clipboard.writeText(patientUrl);
-    } catch {}
+      toast.success("Patient link copied");
+    } catch {
+      toast.error("Failed to copy patient link");
+    }
   }
 
   return (
@@ -332,7 +308,7 @@ export default function DoctorCallPage() {
             </button>
           )}
           <button
-            onClick={leaveToDashboard}
+            onClick={leaveToSummary}
             className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15"
           >
             Back
@@ -344,7 +320,7 @@ export default function DoctorCallPage() {
         <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative">
           <div ref={remoteRef} className="absolute inset-0" />
           <div className="absolute left-3 top-3 text-xs bg-black/40 px-2 py-1 rounded">Remote</div>
-          {!connected && !shouldPollResult && (
+          {!connected && (
             <div className="absolute inset-0 grid place-items-center text-white/60">Connecting…</div>
           )}
         </div>
@@ -352,54 +328,22 @@ export default function DoctorCallPage() {
         <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative">
           <div ref={localRef} className="absolute inset-0" />
           <div className="absolute left-3 top-3 text-xs bg-black/40 px-2 py-1 rounded">You</div>
-          {!connected && !shouldPollResult && (
+          {!connected && (
             <div className="absolute inset-0 grid place-items-center text-white/60">Starting camera…</div>
           )}
         </div>
       </div>
 
-      {(errMsg || processingText || mp4Url) && (
-        <div className="px-4 pb-2 space-y-2">
-          {errMsg && <div className="text-sm text-red-300">{errMsg}</div>}
-          {processingText && <div className="text-sm text-yellow-300">{processingText}</div>}
-
-          {callResultQuery.isFetching && shouldPollResult && (
-            <div className="text-sm text-white/70">Waiting for recording/composition...</div>
-          )}
-
-          {mp4Url && (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-3">
-              <div className="text-sm font-medium">MP4 ready</div>
-              <video
-                src={mp4Url}
-                controls
-                className="w-full max-w-2xl rounded-lg bg-black"
-              />
-              <div className="flex gap-2">
-                <a
-                  href={mp4Url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700"
-                >
-                  Open MP4
-                </a>
-                <button
-                  onClick={leaveToDashboard}
-                  className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15"
-                >
-                  Back to dashboard
-                </button>
-              </div>
-            </div>
-          )}
+      {errMsg && (
+        <div className="px-4 pb-2">
+          <div className="text-sm text-red-300">{errMsg}</div>
         </div>
       )}
 
       <div className="px-4 py-4 border-t border-white/10 flex items-center justify-center gap-3">
         <button
           onClick={toggleMic}
-          disabled={!connected || shouldPollResult}
+          disabled={!connected || isEndingCall}
           className={`px-4 py-2 rounded-full ${
             micOn ? "bg-white/10 hover:bg-white/15" : "bg-red-500/80 hover:bg-red-500"
           } disabled:opacity-50`}
@@ -409,7 +353,7 @@ export default function DoctorCallPage() {
 
         <button
           onClick={toggleCam}
-          disabled={!connected || shouldPollResult}
+          disabled={!connected || isEndingCall}
           className={`px-4 py-2 rounded-full ${
             camOn ? "bg-white/10 hover:bg-white/15" : "bg-red-500/80 hover:bg-red-500"
           } disabled:opacity-50`}
@@ -419,10 +363,10 @@ export default function DoctorCallPage() {
 
         <button
           onClick={endCall}
-          disabled={isEndingCall || shouldPollResult}
+          disabled={isEndingCall}
           className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 font-semibold disabled:opacity-50"
         >
-          {isEndingCall || shouldPollResult ? "Processing..." : "End call"}
+          {isEndingCall ? "Ending..." : "End call"}
         </button>
       </div>
     </div>

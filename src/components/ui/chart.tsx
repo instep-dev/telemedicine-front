@@ -1,5 +1,7 @@
+"use client"
+
 import * as React from "react"
-import type { TooltipProps } from "recharts"
+import type { TooltipContentProps } from "recharts"
 import { Tooltip } from "recharts"
 
 import { cn } from "@/lib/utils"
@@ -37,11 +39,15 @@ ChartContainer.displayName = "ChartContainer"
 
 const ChartTooltip = Tooltip
 
-type ChartTooltipContentProps = TooltipProps<number, string> & {
+type ChartValueType = number | string | ReadonlyArray<number | string>
+type ChartNameType = number | string
+
+type ChartTooltipContentProps = TooltipContentProps<ChartValueType, ChartNameType> & {
   indicator?: "line" | "dot" | "dashed"
   hideLabel?: boolean
   labelKey?: string
   nameKey?: string
+  className?: string
 }
 
 const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(
@@ -97,7 +103,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
                 />
                 <span className="text-muted-foreground">{name}</span>
                 <span className="ml-auto font-medium text-foreground">
-                  {formatter ? formatter(value, String(name), item, index) : value}
+                  {formatter ? formatter(value, String(name), item, index, payload) : value}
                 </span>
               </div>
             )

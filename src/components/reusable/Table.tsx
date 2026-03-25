@@ -1,275 +1,193 @@
 "use client"
 
-import { useMemo } from "react"
-import { GridFourIcon, CaretUpIcon, CaretDownIcon, DotsThreeIcon } from "@phosphor-icons/react"
+import * as React from "react"
+import { GridFourIcon, CaretUpIcon, CaretDownIcon } from "@phosphor-icons/react"
+import type { ColumnDef, SortingState } from "@tanstack/react-table"
 import {
-  Table as UITable,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table"
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
+
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu"
+  Table as UITable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
-export type ScheduleItem = {
-  id: number | string
+type Appointment = {
+  id: string
   patient: string
   doctor: string
   time: string
   type: string
-  status: string
+  status: "Confirmed" | "Pending" | "Completed" | "Cancelled"
 }
 
-export type ColumnKey = "patient" | "doctor" | "time" | "type" | "status"
-
-const allColumns: { key: ColumnKey; label: string }[] = [
-  { key: "patient", label: "Patient" },
-  { key: "doctor", label: "Doctor" },
-  { key: "time", label: "Time" },
-  { key: "type", label: "Type" },
-  { key: "status", label: "Status" },
+const tableData: Appointment[] = [
+  {
+    id: "APT-001",
+    patient: "Jordan Lewis",
+    doctor: "Dr. H. Carter",
+    time: "09:30 AM",
+    type: "Consultation",
+    status: "Confirmed",
+  },
+  {
+    id: "APT-002",
+    patient: "Hana Putri",
+    doctor: "Dr. M. Santoso",
+    time: "10:00 AM",
+    type: "Follow-up",
+    status: "Pending",
+  },
+  {
+    id: "APT-003",
+    patient: "Liam Chen",
+    doctor: "Dr. R. Nguyen",
+    time: "01:15 PM",
+    type: "Lab Review",
+    status: "Completed",
+  },
+  {
+    id: "APT-004",
+    patient: "Aisyah Rahman",
+    doctor: "Dr. N. Ibrahim",
+    time: "03:45 PM",
+    type: "Consultation",
+    status: "Cancelled",
+  },
+  {
+    id: "APT-005",
+    patient: "Mateo Silva",
+    doctor: "Dr. L. Ortega",
+    time: "05:10 PM",
+    type: "Follow-up",
+    status: "Confirmed",
+  },
 ]
 
-type Props = {
-  title: string
-  data: ScheduleItem[]
-  search: string
-  onSearchChange: (value: string) => void
-
-  page: number
-  totalPages: number
-  onPageChange: (page: number) => void
-
-  sortBy: ColumnKey | ""
-  sortOrder: "asc" | "desc"
-  onSortChange: (column: ColumnKey) => void
-
-  visibleColumns: ColumnKey[]
-  onVisibleColumnsChange: (columns: ColumnKey[]) => void
-
-  selectedRows: (string | number)[]
-  onSelectedRowsChange: (rows: (string | number)[]) => void
-
-  loading?: boolean
+const statusClass = (status: Appointment["status"]) => {
+  switch (status) {
+    case "Confirmed":
+      return "bg-green-100 text-green-700"
+    case "Pending":
+      return "bg-yellow-100 text-yellow-700"
+    case "Completed":
+      return "bg-blue-100 text-blue-700"
+    case "Cancelled":
+      return "bg-red-100 text-red-700"
+    default:
+      return "bg-muted text-foreground"
+  }
 }
 
-const Table = ({
-  title,
-  data,
-  search,
-  onSearchChange,
-  page,
-  totalPages,
-  onPageChange,
-  sortBy,
-  sortOrder,
-  onSortChange,
-  visibleColumns,
-  onVisibleColumnsChange,
-  selectedRows,
-  onSelectedRowsChange,
-  loading = false,
-}: Props) => {
-  const allSelected = useMemo(() => {
-    if (!data.length) return false
-    return data.every((item) => selectedRows.includes(item.id))
-  }, [data, selectedRows])
+const columns: ColumnDef<Appointment>[] = [
+  {
+    accessorKey: "patient",
+    header: "Patient",
+  },
+  {
+    accessorKey: "doctor",
+    header: "Doctor",
+  },
+  {
+    accessorKey: "time",
+    header: "Time",
+  },
+  {
+    accessorKey: "type",
+    header: "Type",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const value = row.getValue("status") as Appointment["status"]
+      return (
+        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass(value)}`}>
+          {value}
+        </span>
+      )
+    },
+  },
+]
 
-  const someSelected = useMemo(() => {
-    return data.some((item) => selectedRows.includes(item.id))
-  }, [data, selectedRows])
+const DataTable = () => {
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = React.useState("")
 
-  const toggleSelectAll = (checked: boolean) => {
-    if (checked) {
-      onSelectedRowsChange(data.map((item) => item.id))
-    } else {
-      onSelectedRowsChange([])
-    }
-  }
-
-  const toggleRow = (id: string | number, checked: boolean) => {
-    if (checked) {
-      onSelectedRowsChange([...selectedRows, id])
-    } else {
-      onSelectedRowsChange(selectedRows.filter((item) => item !== id))
-    }
-  }
-
-  const toggleColumn = (column: ColumnKey, checked: boolean) => {
-    if (checked) {
-      if (!visibleColumns.includes(column)) {
-        onVisibleColumnsChange([...visibleColumns, column])
-      }
-    } else {
-      onVisibleColumnsChange(visibleColumns.filter((item) => item !== column))
-    }
-  }
-
-  const renderSortIcon = (column: ColumnKey) => {
-    if (sortBy !== column) return null
-    return sortOrder === "asc" ? <CaretUpIcon size={14} weight="fill" /> : <CaretDownIcon size={14} weight="fill" />
-  }
-
-  const statusClass = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "confirmed":
-        return "bg-green-100 text-green-700"
-      case "pending":
-        return "bg-yellow-100 text-yellow-700"
-      case "completed":
-        return "bg-blue-100 text-blue-700"
-      case "cancelled":
-        return "bg-red-100 text-red-700"
-      default:
-        return "bg-muted text-foreground"
-    }
-  }
+  const table = useReactTable({
+    data: tableData,
+    columns,
+    state: {
+      sorting,
+      globalFilter,
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  })
 
   return (
-    <main className="border border-accent/15 min-h-auto p-4 rounded-2xl bg-white relative">
-      <div className="flex items-center gap-x-2">
-        <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-          <GridFourIcon size={8} className="text-white" weight="fill" />
-        </div>
-        <p className="font-medium text-base">{title}</p>
-      </div>
+    <div className="space-y-4">
+      <Input
+        value={globalFilter}
+        onChange={(event) => setGlobalFilter(event.target.value)}
+        placeholder="Search patients..."
+        className="max-w-sm"
+      />
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <Input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Filter patients..."
-          className="max-w-sm"
-        />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">Columns</Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end">
-            {allColumns.map((column) => (
-              <DropdownMenuCheckboxItem
-                key={column.key}
-                checked={visibleColumns.includes(column.key)}
-                onCheckedChange={(checked) => toggleColumn(column.key, Boolean(checked))}
-              >
-                {column.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="mt-4 border border-accent/15 rounded-2xl overflow-hidden">
+      <div className="rounded-2xl border border-accent/15 overflow-hidden">
         <UITable>
           <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12 px-4">
-                <Checkbox
-                  checked={allSelected || (someSelected ? "indeterminate" : false)}
-                  onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
-                />
-              </TableHead>
-
-              {visibleColumns.includes("patient") && (
-                <TableHead className="px-4">
-                  <button onClick={() => onSortChange("patient")} className="flex items-center gap-1 font-medium cursor-pointer">
-                    Patient
-                    {renderSortIcon("patient")}
-                  </button>
-                </TableHead>
-              )}
-
-              {visibleColumns.includes("doctor") && (
-                <TableHead className="px-4">
-                  <button onClick={() => onSortChange("doctor")} className="flex items-center gap-1 font-medium cursor-pointer">
-                    Doctor
-                    {renderSortIcon("doctor")}
-                  </button>
-                </TableHead>
-              )}
-
-              {visibleColumns.includes("time") && (
-                <TableHead className="px-4">
-                  <button onClick={() => onSortChange("time")} className="flex items-center gap-1 font-medium cursor-pointer">
-                    Time
-                    {renderSortIcon("time")}
-                  </button>
-                </TableHead>
-              )}
-
-              {visibleColumns.includes("type") && (
-                <TableHead className="px-4">
-                  <button onClick={() => onSortChange("type")} className="flex items-center gap-1 font-medium cursor-pointer">
-                    Type
-                    {renderSortIcon("type")}
-                  </button>
-                </TableHead>
-              )}
-
-              {visibleColumns.includes("status") && (
-                <TableHead className="px-4">
-                  <button onClick={() => onSortChange("status")} className="flex items-center gap-1 font-medium cursor-pointer">
-                    Status
-                    {renderSortIcon("status")}
-                  </button>
-                </TableHead>
-              )}
-
-              <TableHead className="w-12 px-4" />
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length + 2} className="px-4 py-10 text-center">
-                  Loading...
-                </TableCell>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                {headerGroup.headers.map((header) => {
+                  const sorted = header.column.getIsSorted()
+                  return (
+                    <TableHead key={header.id} className="px-4">
+                      {header.isPlaceholder ? null : (
+                        <button
+                          onClick={() => header.column.toggleSorting(sorted === "asc")}
+                          className="flex items-center gap-1 font-medium"
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {sorted === "asc" ? <CaretUpIcon size={14} weight="fill" /> : null}
+                          {sorted === "desc" ? <CaretDownIcon size={14} weight="fill" /> : null}
+                        </button>
+                      )}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
-            ) : data.length ? (
-              data.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="px-4 py-3">
-                    <Checkbox
-                      checked={selectedRows.includes(item.id)}
-                      onCheckedChange={(checked) => toggleRow(item.id, Boolean(checked))}
-                    />
-                  </TableCell>
-
-                  {visibleColumns.includes("patient") && <TableCell className="px-4 py-3">{item.patient}</TableCell>}
-                  {visibleColumns.includes("doctor") && <TableCell className="px-4 py-3">{item.doctor}</TableCell>}
-                  {visibleColumns.includes("time") && <TableCell className="px-4 py-3">{item.time}</TableCell>}
-                  {visibleColumns.includes("type") && <TableCell className="px-4 py-3">{item.type}</TableCell>}
-
-                  {visibleColumns.includes("status") && (
-                    <TableCell className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass(item.status)}`}>
-                        {item.status}
-                      </span>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-4 py-3">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
-                  )}
-
-                  <TableCell className="px-4 py-3">
-                    <button className="cursor-pointer">
-                      <DotsThreeIcon size={18} weight="bold" />
-                    </button>
-                  </TableCell>
+                  ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length + 2} className="px-4 py-10 text-center">
+                <TableCell colSpan={columns.length} className="px-4 py-10 text-center">
                   No results found.
                 </TableCell>
               </TableRow>
@@ -278,17 +196,32 @@ const Table = ({
         </UITable>
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <p className="text-sm text-accent">{selectedRows.length} row(s) selected.</p>
-
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-accent">{table.getFilteredRowModel().rows.length} result(s).</p>
         <div className="flex items-center gap-2">
-          <Button variant="outline" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             Previous
           </Button>
-          <Button variant="outline" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
           </Button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+const Table = ({ title }: { title: string }) => {
+  return (
+    <main className="border border-accent/15 min-h-screen p-4 rounded-2xl bg-white relative">
+      <div className="flex items-center gap-x-2">
+        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+          <GridFourIcon size={10} className="text-white" weight="fill" />
+        </div>
+        <p className="font-medium tracking-tight">{title}</p>
+      </div>
+      <div className="mt-4">
+        <DataTable />
       </div>
     </main>
   )

@@ -132,17 +132,17 @@ const HistoryPage = () => {
 
   const rows = data?.data ?? [];
 
-  const handleNextPage = () => {
-    if (data?.pagination?.hasMore) {
-      setPage((prev) => prev + 1);
-    }
-  };
+  // const handleNextPage = () => {
+  //   if (data?.pagination?.hasMore) {
+  //     setPage((prev) => prev + 1);
+  //   }
+  // };
 
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setPage((prev) => prev - 1);
-    }
-  };
+  // const handlePrevPage = () => {
+  //   if (page > 1) {
+  //     setPage((prev) => prev - 1);
+  //   }
+  // };
 
   const handlePageChange = (nextPage: number) => {
     if (nextPage === page) return;
