@@ -43,7 +43,7 @@ const Footer = () => {
             <div className="mt-6">
               <div className="relative overflow-hidden">
                 <input placeholder="your email" className="relative text-black font-medium w-full pl-6 p-3 rounded-full bg-white border border-accent/15 placeholder:capitalize placeholder:font-medium placeholder:text-accent"/>
-                <Image src={"/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
+                <Image src={"/static/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
               </div>
               <button className="flex items-center justify-center w-full p-3 bg-primary text-white rounded-full mt-4 font-medium">
                 Get Started

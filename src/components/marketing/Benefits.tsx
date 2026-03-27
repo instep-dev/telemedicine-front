@@ -9,8 +9,8 @@ import Image from "next/image"
 
 const RightPanel = () => (
   <div className="h-full min-h-[420px] rounded-3xl bg-primary p-8 text-white relative overflow-hidden group cursor-pointer">
-    <Image src={"/Dots.png"} alt="blur" width={400} height={400} className="absolute z-0 left-0 right-0 -bottom-4" />
-    <Image src={"/doctor1.png"} alt="blur" width={700} height={250} className="absolute z-10 left-1/2 -translate-x-1/2 -bottom-28 group-hover:scale-105 transition-all duration-200" />
+    <Image src={"/static/Dots.png"} alt="blur" width={400} height={400} className="absolute z-0 left-0 right-0 -bottom-4" />
+    <Image src={"/static/doctor1.png"} alt="blur" width={700} height={250} className="absolute z-10 left-1/2 -translate-x-1/2 -bottom-28 group-hover:scale-105 transition-all duration-200" />
     <div className="w-10 h-10 bg-[#7fc8c2] group-hover:bg-white transition-all duration-200 rounded-lg flex items-center justify-center relative">
       <ArrowRightIcon size={16} weight="bold" className="text-white group-hover:text-primary transition-all duration-200"/>
     </div>
@@ -22,7 +22,7 @@ const RightPanel = () => (
 const BenefitCard = ({ title, desc, icon: Icon }: { title: string; desc: string, icon:any }) => {
   return (
     <div className="rounded-3xl border border-accent/15 p-6 relative overflow-hidden bg-white">
-      <Image src={"/Dot.png"} alt="blur" width={400} height={400} className="absolute right-0 top-0" />
+      <Image src={"/static/Dot.png"} alt="blur" width={400} height={400} className="absolute right-0 top-0" />
       <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center" >
         <Icon size={17} weight="bold" className="text-white"/>
       </div>
