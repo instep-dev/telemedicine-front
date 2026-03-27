@@ -56,8 +56,8 @@ const Solutions = () => {
             <h3 className="text-accent">feels supported.</h3>
           </div>
           <div className="mt-10 text-white flex items-center gap-x-6 p-8 rounded-2xl bg-primary relative overflow-hidden"> 
-            <Image src={"/Dots.png"} alt="blur" width={400} height={400} className="absolute z-0 left-0 right-0 -bottom-4" />
-            <Image src={"/doctor2.png"} alt="blur" width={100} height={100} className="absolute z-10 right-2 -bottom-12 group-hover:scale-105 transition-all duration-200" />
+            <Image src={"/static/Dots.png"} alt="blur" width={400} height={400} className="absolute z-0 left-0 right-0 -bottom-4" />
+            <Image src={"/static/doctor2.png"} alt="blur" width={100} height={100} className="absolute z-10 right-2 -bottom-12 group-hover:scale-105 transition-all duration-200" />
             <h3 className="text-5xl font-semibold tracking-tight">92%</h3>
             <div className="font-medium">
               <p>Patients reported faster access & improved </p>

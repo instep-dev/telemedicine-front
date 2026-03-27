@@ -23,7 +23,7 @@ const Faq = () => {
       <div className={`${GlobalStyles.innerContainer} grid grid-cols-3 gap-12`}>
         <div className="col-span-1 ">
           <div className="border border-accent/15 w-full rounded-3xl p-6 bg-primary relative overflow-hidden sticky top-20">
-            <Image src={"/Dots.png"} alt="blur" width={400} height={400} className="absolute z-0 left-0 right-0 -bottom-4" />
+            <Image src={"/static/Dots.png"} alt="blur" width={400} height={400} className="absolute z-0 left-0 right-0 -bottom-4" />
             <div className="w-12 h-12 bg-[#7fc8c2] group-hover:bg-white transition-all duration-200 rounded-full flex items-center justify-center relative">
               <PhoneCallIcon size={22} weight="fill" className="text-white group-hover:text-primary transition-all duration-200" />
             </div>

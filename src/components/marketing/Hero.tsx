@@ -10,7 +10,7 @@ import { Fragment } from 'react/jsx-runtime'
 const Hero = () => {
   return (
     <main className='w-full min-h-screen pt-20 pb-20 relative relative'>
-      <Image src={`/bg.png`} width={200} height={200} className=' w-full h-full absolute inset-0' alt=''/>
+      <Image src={`/static/bg.png`} width={200} height={200} className=' w-full h-full absolute inset-0' alt=''/>
       <div className='max-w-6xl mx-auto h-[600px] relative z-10 grid grid-cols-2 '>
         <div className='flex items-center justify-start'>
           <div className=''>
@@ -71,7 +71,7 @@ const Hero = () => {
           <div className='w-[75%] h-full rounded-2xl relative shadow-2xl '>
             <div className="absolute top-4 left-4 z-10 flex items-center gap-x-2">
               <div className="w-9 h-9 border-3 shadow border-accent/15 rounded-full overflow-hidden">
-                <Image src={'/doctor2.jpeg'} alt="" width={100} height={100} className="w-full h-full object-cover object-top"/>
+                <Image src={'/static/doctor2.jpeg'} alt="" width={100} height={100} className="w-full h-full object-cover object-top"/>
               </div>
               <p className="text-white font-medium ">Dr. Sara Safari</p>
               <SealCheckIcon size={16} weight="fill" className="text-blue-500 -ml-1"/>

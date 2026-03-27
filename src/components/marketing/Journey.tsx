@@ -9,7 +9,7 @@ import Image from 'next/image'
 const LeftPanel = () => {
   return (
     <div className='border border-accent/15 bg-white p-8 rounded-3xl relative overflow-hidden group cursor-pointer'>
-      <Image src={"/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
+      <Image src={"/static/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
       <MiniTitle title='Tracking simplified' desc='Track consultations & test results' />
       <div className='mt-10 h-[270px] flex items-start gap-x-8 relative'>
         <div className='w-[1px] h-[80%] bg-accent/15 ml-2 relative mt-1'>
@@ -58,7 +58,7 @@ const LeftPanel = () => {
 const MidPanel = () => {
   return (
     <div className='border border-accent/15 bg-white p-8 rounded-3xl relative overflow-hidden group cursor-pointer'>
-      <Image src={"/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
+      <Image src={"/static/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
       <MiniTitle title='Instant support' desc='Connect with doctors quick anytime' />
       <div className='mt-10 h-[270px] flex flex-col justify-between relative'>
         <div className='flex justify-end items-center'>
@@ -100,7 +100,7 @@ const RightPanel = () => {
 
   return (
     <div className='border border-accent/15 bg-white p-8 rounded-3xl relative overflow-hidden group cursor-pointer'>
-      <Image src={"/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
+      <Image src={"/static/Dot.png"} alt="blur" width={400} height={400} className="absolute z-0 right-0 top-0" />
       <MiniTitle title='1-1 Consultation' desc='Doctors through video consultations' />
       <div className='mt-10 h-[270px] flex flex-col justify-between relative'>
         <div className='flex items-center justify-center relative'>

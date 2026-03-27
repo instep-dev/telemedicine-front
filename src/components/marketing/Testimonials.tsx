@@ -38,7 +38,7 @@ const Testimonials = () => {
           {visibleTestimonials.map((item, i) => {
             return (
               <div key={i} className="border rounded-3xl border-accent/15 relative p-6 h-[280px] flex flex-col justify-between bg-white">
-                <Image src={"/Dot.png"} alt="blur" width={400} height={400} className="absolute right-0 top-0" />
+                <Image src={"/static/Dot.png"} alt="blur" width={400} height={400} className="absolute right-0 top-0" />
                 <div className="relative">
                   <div className="flex items-center ">
                     {starData.map((item, i) => {
