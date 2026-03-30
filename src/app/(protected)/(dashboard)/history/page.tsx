@@ -26,6 +26,7 @@ import {
 import { useCreateRoom } from "@/hooks/useCreateRoom";
 import { authStore } from "@/services/auth/auth.store";
 import { useCallsQuery } from "@/services/history/history.queries";
+import { formatDuration } from "@/hooks/useDurationFormat";
 
 const PAGE_SIZE = 10;
 
@@ -58,7 +59,23 @@ const formatDate = (date: any) => {
     hour12: true,
   });
 
-  return `${datePart} ‣ ${timePart}`;
+  return (
+    <div className="flex items-center gap-x-1">
+      {datePart}
+      <div className="w-1 h-1 bg-gray-400 rounded-full"/>
+      {timePart}
+    </div>
+   
+  )
+};
+
+const getStatusLabel = (status?: string | null): string => {
+  if (status === "STARTED") return "STARTED";
+  if (status === "CONNECTED") return "IN CALL";
+  if (status === "RECORDING_READY") return "RECORDING";
+  if (status === "COMPLETED") return "COMPLETED";
+  if (status === "FAILED") return "FAILED";
+  return status ?? "-";
 };
 
 const getStatusColor = (status?: string | null): "success" | "warning" | "error" | "light" => {
@@ -142,6 +159,30 @@ const HistoryPage = () => {
   //   if (page > 1) {
   //     setPage((prev) => prev - 1);
   //   }
+  // };
+
+  // const formatDuration = (seconds?: number | null): string => {
+  //   if (!seconds || seconds <= 0) return "-";
+
+  //   const hours = Math.floor(seconds / 3600);
+  //   const minutes = Math.floor((seconds % 3600) / 60);
+  //   const secs = seconds % 60;
+
+  //   const parts: string[] = [];
+
+  //   if (hours > 0) {
+  //     parts.push(`${hours} hour${hours > 1 ? "s" : ""}`);
+  //   }
+
+  //   if (minutes > 0) {
+  //     parts.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
+  //   }
+
+  //   if (hours === 0 && secs > 0) {
+  //     parts.push(`${secs} second${secs > 1 ? "s" : ""}`);
+  //   }
+
+  //   return parts.join(" ");
   // };
 
   const handlePageChange = (nextPage: number) => {
@@ -281,18 +322,17 @@ const HistoryPage = () => {
                   rows.map((item, i) => (
                     <TableRow key={item.id} className={`${i % 2 ? "bg-[#f9fafb]/50" : ""} hover:bg-[#f9fafb] transition-all duration-300 cursor-pointer`}>
                       <TableCell className="border-b border-gray-200 px-6 py-4 text-start">
-                        <div className="block text-gray-500 text-theme-sm dark:text-white/90 flex items-center gap-x-2">
+                        <div className="block text-gray-500 text-theme-sm dark:text-white/90 flex items-center gap-x-1">
                           {item.doctorName ?? "-"}
                           <SealCheckIcon className="text-green-500" size={12} weight="fill"/>
                         </div>
                       </TableCell>
 
                       <TableCell className="group cursor-pointer border-b border-gray-200 p-6 relative text-theme-sm text-gray-500 dark:text-gray-400">
-                        Fadlan Daris
+                        {item.patientName ?? "-"}
                         <div className="absolute min-w-52 group-hover:opacity-100 opacity-0 -top-6 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-white shadow border">
                           <div className="p-2 relative">
-                            {/* <div className="w-1 h-1 rounded-full bg-primary absolute -bottom-0.5 -left-0.5"/> */}
-                            {item.patientIdentity}
+                            {item.patientIdentity ?? "-"}
                           </div>
                         </div>
                       </TableCell>
@@ -302,9 +342,7 @@ const HistoryPage = () => {
                       </TableCell>
 
                       <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
-                        {item.durationSec
-                          ? `${Math.floor(item.durationSec / 60)} menit ${item.durationSec % 60} detik`
-                          : "-"}
+                        {formatDuration(item.durationSec)}
                       </TableCell>
 
                       <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
@@ -312,8 +350,8 @@ const HistoryPage = () => {
                       </TableCell>
 
                       <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
-                        <Badge size="sm"  color={getStatusColor(item.status)}>
-                          {item.status}
+                        <Badge size="sm" color={getStatusColor(item.status)}>
+                          {getStatusLabel(item.status)}
                         </Badge>
                       </TableCell>
 

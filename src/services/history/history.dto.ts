@@ -10,6 +10,7 @@ export type CallItemDto = {
   consultationId: string;
   doctorId: string | null;
   doctorName: string | null;
+  patientName: string | null;
   status: "STARTED" | "CONNECTED" | "RECORDING_READY" | "COMPLETED" | "FAILED";
   roomSid: string | null;
   roomName: string | null;

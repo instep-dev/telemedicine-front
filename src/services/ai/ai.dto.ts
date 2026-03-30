@@ -12,6 +12,7 @@ export type AiResultItemDto = {
   doctorName: string | null;
   roomName: string | null;
   patientIdentity: string | null;
+  patientName: string | null;
   consultationStatus: string;
   consultationStartedAt: string | null;
   consultationEndedAt: string | null;
