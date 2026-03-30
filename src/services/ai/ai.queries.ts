@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { aiApi } from "./ai.api";
 import type { GetAiResultsParams } from "./ai.dto";
 
+export const AI_RESULTS_REFETCH_INTERVAL_MS = 5000;
+
 export function useAiResultsQuery(
   accessToken: string | null,
   params: GetAiResultsParams,
@@ -15,7 +17,7 @@ export function useAiResultsQuery(
     },
     enabled: !!accessToken && enabled,
     retry: false,
-    refetchInterval: 5000,
+    refetchInterval: AI_RESULTS_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: true,
     staleTime: 0,
   });
@@ -52,7 +54,7 @@ export function useAiResultsWatcherQuery(
     },
     enabled: !!accessToken && enabled,
     retry: false,
-    refetchInterval: 5000,
+    refetchInterval: AI_RESULTS_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: true,
     staleTime: 0,
   });
