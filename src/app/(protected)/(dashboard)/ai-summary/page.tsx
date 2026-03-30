@@ -45,7 +45,6 @@ function formatDate(date?: string | null) {
   });
 }
 
-
 function normalizeStatus(aiStatus?: string | null) {
   return (aiStatus ?? "").trim().toUpperCase();
 }
@@ -139,6 +138,7 @@ type TaskCardProps = {
 const TaskCard = ({ task }: TaskCardProps) => {
   const bucket = getStatusBucket(task.aiStatus);
   const summaryText = trimText(task.summary, 70);
+  const aiErrorText = trimText(task.aiError, 70)
 
   const badgeTone =
     bucket === "success"
@@ -212,7 +212,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
               <SealWarningIcon className="text-[10px] text-red-600" weight="bold"/>
             </div>
             <p className="text-xs text-red-500">
-              {task.aiError}
+              {aiErrorText}
             </p>
           </div>
         )}
