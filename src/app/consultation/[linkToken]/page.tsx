@@ -245,8 +245,10 @@ export default function MeetPage() {
               <div className="font-medium">{info.status}</div>
             </div>
             <div className="rounded-lg border p-3">
-              <div className="text-gray-500 text-xs">Expires</div>
-              <div className="font-medium">{info.expiresAt ?? "-"}</div>
+              <div className="text-gray-500 text-xs">Access</div>
+              <div className="font-medium">
+                Active while consultation is ongoing
+              </div>
             </div>
           </div>
         )}
@@ -260,6 +262,7 @@ export default function MeetPage() {
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Nama kamu"
             disabled={connected}
+            maxLength={50}
             className="w-full md:w-80 px-3 py-2 rounded-lg border outline-none focus:ring-2 focus:ring-gray-200 disabled:bg-gray-50"
           />
 

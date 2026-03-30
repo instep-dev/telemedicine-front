@@ -4,10 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import PageBreadcrumb from "@/components/dashboard/common/PageBreadCrumb";
 import Button from "@/components/dashboard/ui/button/Button";
-import { DownloadIcon, PlusIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, ArrowUpRightIcon, CircleNotchIcon, ClockUserIcon, InfoIcon, PlusIcon, SealWarningIcon, UserIcon, CheckIcon } from "@phosphor-icons/react";
 import { useCreateRoom } from "@/hooks/useCreateRoom";
 import { authStore } from "@/services/auth/auth.store";
-import { useAiResultsQuery } from "@/services/ai/ai.queries";
+import { AI_RESULTS_REFETCH_INTERVAL_MS, useAiResultsQuery } from "@/services/ai/ai.queries";
+import type { AiResultItemDto } from "@/services/ai/ai.dto";
+import { CalendarCheckIcon } from "@phosphor-icons/react/dist/ssr";
+import { formatDuration } from "@/hooks/useDurationFormat";
+import { getInitials } from "@/hooks/useInitials";
+import { bucketStatus } from "@/hooks/useBucketStatus";
+import DataEmpty from "@/components/reusable/DataEmpty";
+import trimText from "@/hooks/useTrimText";
 
 const CreateRoomButton = () => {
   const { handleCreateRoom, isCreating } = useCreateRoom();
@@ -23,6 +30,8 @@ const CreateRoomButton = () => {
   );
 };
 
+const REFRESH_INTERVAL_SEC = Math.max(1, Math.ceil(AI_RESULTS_REFETCH_INTERVAL_MS / 1000));
+
 function formatDate(date?: string | null) {
   if (!date) return "-";
 
@@ -36,26 +45,6 @@ function formatDate(date?: string | null) {
   });
 }
 
-function formatDuration(durationSec?: number | null) {
-  if (!durationSec || durationSec <= 0) return "-";
-
-  const min = Math.floor(durationSec / 60);
-  const sec = durationSec % 60;
-
-  if (min <= 0) return `${sec} detik`;
-  if (sec <= 0) return `${min} menit`;
-
-  return `${min} menit ${sec} detik`;
-}
-
-function getInitials(name?: string | null) {
-  if (!name) return "DR";
-
-  const parts = name.trim().split(" ").filter(Boolean);
-  if (parts.length === 1) return parts[0]?.slice(0, 2).toUpperCase() ?? "DR";
-
-  return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
-}
 
 function normalizeStatus(aiStatus?: string | null) {
   return (aiStatus ?? "").trim().toUpperCase();
@@ -126,7 +115,7 @@ function getEstimatedTimeText(
 
   if (!createdAt) {
     const mins = Math.ceil(estimatedTotalSec / 60);
-    return `Estimasi sekitar ${mins} menit`;
+    return `Estimated ${mins} minutes`;
   }
 
   const started = new Date(createdAt).getTime();
@@ -134,19 +123,141 @@ function getEstimatedTimeText(
   const elapsedSec = Math.max(0, Math.floor((now - started) / 1000));
   const remainingSec = Math.max(15, estimatedTotalSec - elapsedSec);
 
-  if (remainingSec < 60) return `Estimasi ${remainingSec} detik lagi`;
+  if (remainingSec < 60) return `Estimated ${remainingSec} seconds`;
 
   const min = Math.floor(remainingSec / 60);
   const sec = remainingSec % 60;
 
-  if (sec === 0) return `Estimasi ${min} menit lagi`;
-  return `Estimasi ${min} menit ${sec} detik lagi`;
+  if (sec === 0) return `Estimated ${min} minutes`;
+  return `Estimated ${min} minutes ${sec}`;
 }
+
+type TaskCardProps = {
+  task: AiResultItemDto;
+};
+
+const TaskCard = ({ task }: TaskCardProps) => {
+  const bucket = getStatusBucket(task.aiStatus);
+  const summaryText = trimText(task.summary, 70);
+
+  const badgeTone =
+    bucket === "success"
+      ? "bg-green-50 text-green-600 "
+      : bucket === "failed"
+        ? "bg-red-50 text-red-600 border border-red-200"
+        : "bg-yellow-50 text-yellow-600 border border-yellow-200";
+
+  const avatarTone =
+    bucket === "success"
+      ? "bg-green-50 text-green-600 border border-green-200"
+      : bucket === "failed"
+        ? "bg-red-100 text-red-700 border border-red-200"
+        : "bg-yellow-100 text-yellow-700 border border-yellow-200";
+
+  const stageLabel = getStageLabel(task.aiStatus);
+  const estimateText = getEstimatedTimeText(
+    task.aiStatus,
+    task.createdAt,
+    task.callSession?.durationSec,
+  );
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium text-black flex items-center gap-1">
+            <UserIcon weight="fill" className="text-gray-300"/>
+            <p>{task.patientName || "-"} </p>
+          </div>
+          <div className=" line-clamp-2 text-xs text-gray-500 flex items-center gap-1">
+            {task.roomName || task.patientIdentity || "Untitled Summary"}
+          </div>
+          <p className="mt-1 line-clamp-2 text-xs text-gray-500">
+            {bucketStatus(bucket, summaryText)}
+          </p>
+        </div>
+
+        <div
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium ${avatarTone}`}
+        >
+          {getInitials(task.patientName)}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
+        <p className="text-sm font-medium text-black">
+          {stageLabel}
+        </p>
+        {bucket === "success" && (
+          <div className="mt-2 flex gap-x-2">
+            <div className="w-6 h-5 rounded-full flex items-center justify-center bg-green-100">
+              <CheckIcon className="text-[10px] text-green-800" weight="bold"/>
+            </div>
+            <p className="text-xs text-green-500">
+              {summaryText}
+            </p>
+          </div>
+        )}
+        {bucket === "in-progress" && (
+          <div className="mt-2 text-xs text-gray-500 flex items-center gap-x-1">
+            <div className="w-4 h-4 rounded-full flex items-center justify-center bg-yellow-50">
+              <CircleNotchIcon className="text-[11px] text-yellow-600 animate-spin" weight="bold"/>
+            </div>
+            {estimateText}
+          </div>
+        )}
+        {bucket === "failed" && task.aiError && (
+          <div className="mt-2 flex gap-x-2">
+            <div className="w-6 h-5 rounded-full flex items-center justify-center bg-red-100">
+              <SealWarningIcon className="text-[10px] text-red-600" weight="bold"/>
+            </div>
+            <p className="text-xs text-red-500">
+              {task.aiError}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+        <span className="flex items-center gap-1">
+          <CalendarCheckIcon weight="bold"/>
+          {formatDate(task.createdAt)}
+        </span>
+        
+        <div className="w-1 h-1 bg-gray-400/70 rounded-full"/>
+
+        <span className="flex items-center gap-1">
+          <ClockUserIcon weight="bold"/>
+          {formatDuration(task.callSession?.durationSec)}
+        </span>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <span
+          className={`inline-flex items-center rounded-lg px-3 py-1 text-xs font-medium ${badgeTone}`}
+        >
+          {task.aiStatus || "UNKNOWN"}
+        </span>
+
+        <Link
+          href={`/dashboard/ai-summary/${task.id}`}
+          className="text-xs font-medium text-brand-600 hover:text-brand-700"
+        >
+          <div className="px-3 py-2 gap-x-1 flex items-center rounded-full justify-center bg-blue-50">
+            Details
+            <ArrowUpRightIcon className="text-sm text-primary" weight="bold"/>
+          </div>
+        </Link>
+      </div>
+    </div>
+  );
+};
 
 export default function AiSummary() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [refreshCountdown, setRefreshCountdown] = useState(REFRESH_INTERVAL_SEC);
 
   useEffect(() => {
     setAccessToken(authStore.getState().accessToken);
@@ -158,7 +269,7 @@ export default function AiSummary() {
     return () => unsubscribe();
   }, []);
 
-  const { data, isLoading, isFetching, error } = useAiResultsQuery(
+  const { data, isLoading, isFetching, error, dataUpdatedAt } = useAiResultsQuery(
     accessToken,
     {
       limit: 18,
@@ -167,6 +278,28 @@ export default function AiSummary() {
     },
     true,
   );
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const updateCountdown = () => {
+      if (!dataUpdatedAt) {
+        setRefreshCountdown(REFRESH_INTERVAL_SEC);
+        return;
+      }
+
+      const elapsedMs = Date.now() - dataUpdatedAt;
+      const remainingMs = Math.max(0, AI_RESULTS_REFETCH_INTERVAL_MS - elapsedMs);
+      const remainingSec = Math.max(1, Math.ceil(remainingMs / 1000));
+
+      setRefreshCountdown(remainingSec);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 250);
+
+    return () => clearInterval(timer);
+  }, [accessToken, dataUpdatedAt]);
 
   const items = data?.data ?? [];
 
@@ -209,6 +342,9 @@ export default function AiSummary() {
     },
   ].filter((column) => activeFilter === "all" || activeFilter === column.key);
 
+  const isAllView = activeFilter === "all";
+  const singleColumn = !isAllView ? kanbanColumns[0] : null;
+
   return (
     <main>
       <PageBreadcrumb pageTitle="AI Summary" />
@@ -250,155 +386,104 @@ export default function AiSummary() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" startIcon={<DownloadIcon />}>
-              {isFetching ? "Refreshing..." : "Auto Refresh 5s"}
+            <Button
+              variant="outline"
+              startIcon={<ArrowClockwiseIcon className={`animate-spin`} />}
+            >
+              {isFetching ? "Refreshing..." : `Auto Refresh ${refreshCountdown}s`}
             </Button>
             <CreateRoomButton />
           </div>
         </div>
 
         {grouped.inProgress.length > 0 && (
-          <div className="mx-6 mb-0 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
-            {grouped.inProgress.length} AI summary sedang diproses di background.
+          <div className="mx-6 mb-0 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700 flex items-center gap-x-2 mb-6">
+            <div className="w-4 h-4 flex items-center justify-center">
+              <InfoIcon className="text-base "/>
+            </div>
+            <p>
+              <span className="font-semibold mr-1.5">{grouped.inProgress.length}</span>Consultations AI Summary background process
+            </p>
           </div>
         )}
 
         {isLoading ? (
-          <div className="border-t border-gray-100 p-6 text-sm text-gray-500">
-            Loading AI summaries...
+          <div className="p-6">
+            <DataEmpty value={"Loading AI summaries..."} subValue={""}/>
           </div>
         ) : error ? (
-          <div className="border-t border-gray-100 p-6 text-sm text-red-500">
-            Failed to load AI summaries.
+          <div className="p-6">
+            <DataEmpty value={"Failed to load "} subValue={"AI summaries."}/>
           </div>
         ) : items.length === 0 ? (
-          <div className="border-t border-gray-100 p-6 text-sm text-gray-500">
-            Belum ada AI summary.
+          <div className="p-6">
+            <DataEmpty value={"Data Empty"} subValue={"starts creating room"}/>
           </div>
         ) : (
           <>
-            <div className="grid gap-6 border-t border-gray-100 p-6 lg:grid-cols-3">
-              {kanbanColumns.map((column) => (
-                <div key={column.key} className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        {column.title}
-                      </h3>
-                      <span
-                        className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${column.tone}`}
-                      >
-                        {column.count}
-                      </span>
+            {isAllView ? (
+              <div className="grid gap-6 border-t border-gray-100 p-6 lg:grid-cols-3">
+                {kanbanColumns.map((column) => (
+                  <div key={column.key} className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {column.title}
+                        </h3>
+                        <span
+                          className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${column.tone}`}
+                        >
+                          {column.count}
+                        </span>
+                      </div>
+
+                      <button className="rounded-full px-2 text-gray-400 hover:text-gray-600">
+                        ...
+                      </button>
                     </div>
 
-                    <button className="rounded-full px-2 text-gray-400 hover:text-gray-600">
-                      ...
-                    </button>
+                    <div className="space-y-4">
+                      {column.tasks.length === 0 ? (
+                        <DataEmpty value={"Data Empty"} subValue={"starts creating room"}/>
+                      ) : (
+                        column.tasks.map((task) => (
+                          <TaskCard key={task.id} task={task} />
+                        ))
+                      )}
+                    </div>
                   </div>
-
-                  <div className="space-y-4">
-                    {column.tasks.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
-                        Tidak ada data.
+                ))}
+              </div>
+            ) : (
+              <div className="border-t border-gray-100 p-6">
+                {singleColumn && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {singleColumn.title}
+                        </h3>
+                        <span
+                          className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${singleColumn.tone}`}
+                        >
+                          {singleColumn.count}
+                        </span>
                       </div>
+                    </div>
+
+                    {singleColumn.tasks.length === 0 ? (
+                      <DataEmpty value={"Data Empty"} subValue={"starts creating room"}/>
                     ) : (
-                      column.tasks.map((task) => {
-                        const bucket = getStatusBucket(task.aiStatus);
-
-                        const badgeTone =
-                          bucket === "success"
-                            ? "bg-green-50 text-green-600"
-                            : bucket === "failed"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-yellow-50 text-yellow-600";
-
-                        const avatarTone =
-                          bucket === "success"
-                            ? "bg-green-100 text-green-700"
-                            : bucket === "failed"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700";
-
-                        const stageLabel = getStageLabel(task.aiStatus);
-                        const estimateText = getEstimatedTimeText(
-                          task.aiStatus,
-                          task.createdAt,
-                          task.callSession?.durationSec,
-                        );
-
-                        return (
-                          <div
-                            key={task.id}
-                            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-gray-900">
-                                  {task.roomName || task.patientIdentity || "Untitled Summary"}
-                                </p>
-                                <p className="mt-1 line-clamp-2 text-xs text-gray-500">
-                                  {task.summary || task.subjective || task.transcriptRaw || "-"}
-                                </p>
-                              </div>
-
-                              <div
-                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${avatarTone}`}
-                              >
-                                {getInitials(task.doctorName)}
-                              </div>
-                            </div>
-
-                            <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
-                              <p className="text-xs font-medium text-gray-700">
-                                Stage: {stageLabel}
-                              </p>
-                              {bucket === "in-progress" && (
-                                <p className="mt-1 text-xs text-gray-500">
-                                  {estimateText}
-                                </p>
-                              )}
-                              {bucket === "failed" && task.aiError && (
-                                <p className="mt-1 line-clamp-2 text-xs text-red-500">
-                                  {task.aiError}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                              <span className="flex items-center gap-2">
-                                <span className="inline-block h-3 w-3 rounded-sm border border-gray-300" />
-                                {formatDate(task.createdAt)}
-                              </span>
-
-                              <span className="flex items-center gap-2">
-                                <span className="inline-block h-3 w-3 rounded-full border border-gray-300" />
-                                {formatDuration(task.callSession?.durationSec)}
-                              </span>
-                            </div>
-
-                            <div className="mt-4 flex items-center justify-between gap-3">
-                              <span
-                                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${badgeTone}`}
-                              >
-                                {task.aiStatus || "UNKNOWN"}
-                              </span>
-
-                              <Link
-                                href={`/dashboard/ai-summary/${task.id}`}
-                                className="text-xs font-medium text-brand-600 hover:text-brand-700"
-                              >
-                                See More
-                              </Link>
-                            </div>
-                          </div>
-                        );
-                      })
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {singleColumn.tasks.map((task) => (
+                          <TaskCard key={task.id} task={task} />
+                        ))}
+                      </div>
                     )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {data?.pagination?.hasMore && (
               <div className="border-t border-gray-100 p-6">
