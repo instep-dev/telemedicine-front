@@ -33,6 +33,12 @@ export type CallItemDto = {
   consultationStatus: string;
   consultationStartedAt: string | null;
   consultationEndedAt: string | null;
+  patientCity: string | null;
+  patientProvince: string | null;
+  patientCountry: string | null;
+  patientCountryCode: string | null;
+  patientLatitude: number | null;
+  patientLongitude: number | null;
   createdAt: string;
   updatedAt: string;
 };

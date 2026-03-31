@@ -6,12 +6,20 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 
+type MonthlyConsultationChartProps = {
+  monthlyCounts: number[];
+  loading?: boolean;
+};
+
 // Dynamically import the ReactApexChart component
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function MonthlyConsultationChart() {
+export default function MonthlyConsultationChart({
+  monthlyCounts,
+  loading = false,
+}: MonthlyConsultationChartProps) {
   const options: ApexOptions = {
     colors: ["#465fff"],
     chart: {
@@ -87,14 +95,21 @@ export default function MonthlyConsultationChart() {
         show: false,
       },
       y: {
-        formatter: (val: number) => `${val}`,
+        formatter: (val: number) =>
+          `${val} call${val === 1 ? "" : "s"}`,
       },
     },
   };
+  const safeCounts = Array.isArray(monthlyCounts) ? monthlyCounts : [];
+  const normalizedCounts = loading
+    ? Array(12).fill(0)
+    : safeCounts.length === 12
+      ? safeCounts
+      : Array(12).fill(0);
   const series = [
     {
-      name: "Sales",
-      data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+      name: "Consultations",
+      data: normalizedCounts,
     },
   ];
   const [isOpen, setIsOpen] = useState(false);

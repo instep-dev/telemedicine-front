@@ -8,7 +8,17 @@ import { CalendarIcon } from "@phosphor-icons/react";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-export default function StatisticsChart() {
+type StatisticsChartProps = {
+  monthlyCounts: number[];
+  monthlyHours: number[];
+  loading?: boolean;
+};
+
+export default function StatisticsChart({
+  monthlyCounts,
+  monthlyHours,
+  loading = false,
+}: StatisticsChartProps) {
   const datePickerRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,7 +50,7 @@ export default function StatisticsChart() {
 
   const options: ApexOptions = {
     legend: {
-      show: false, // Hide legend
+      show: true,
       position: "top",
       horizontalAlign: "left",
     },
@@ -126,6 +136,10 @@ export default function StatisticsChart() {
           fontSize: "12px", // Adjust font size for y-axis labels
           colors: ["#6B7280"], // Color of the labels
         },
+        formatter: (val: number) => {
+          const rounded = Number(val.toFixed(1));
+          return rounded % 1 === 0 ? `${rounded.toFixed(0)}` : `${rounded}`;
+        },
       },
       title: {
         text: "", // Remove y-axis title
@@ -136,14 +150,27 @@ export default function StatisticsChart() {
     },
   };
 
+  const safeCounts = Array.isArray(monthlyCounts) ? monthlyCounts : [];
+  const safeHours = Array.isArray(monthlyHours) ? monthlyHours : [];
+  const normalizedCounts = loading
+    ? Array(12).fill(0)
+    : safeCounts.length === 12
+      ? safeCounts
+      : Array(12).fill(0);
+  const normalizedHours = loading
+    ? Array(12).fill(0)
+    : safeHours.length === 12
+      ? safeHours
+      : Array(12).fill(0);
+
   const series = [
     {
-      name: "Sales",
-      data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
+      name: "Calls",
+      data: normalizedCounts,
     },
     {
-      name: "Revenue",
-      data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
+      name: "Hours",
+      data: normalizedHours,
     },
   ];
   return (
@@ -151,10 +178,10 @@ export default function StatisticsChart() {
       <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
         <div className="w-full">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Statistics
+            Statistics consultations
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Target you've set for each month
+            Monthly calls and consultation hours
           </p>
         </div>
         <div className="flex items-center gap-3 sm:justify-end">

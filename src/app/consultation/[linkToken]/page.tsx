@@ -19,6 +19,7 @@ export default function MeetPage() {
   const [displayName, setDisplayName] = useState("");
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [clientIp, setClientIp] = useState<string | null>(null);
 
   const roomRef = useRef<Room | null>(null);
   const localRef = useRef<HTMLDivElement | null>(null);
@@ -96,6 +97,28 @@ export default function MeetPage() {
   useEffect(() => {
     return () => cleanupRoom();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadIp() {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        if (!res.ok) return;
+        const data = await res.json();
+        const ip = typeof data?.ip === "string" ? data.ip : null;
+        if (active && ip) setClientIp(ip);
+      } catch {
+        // ignore: optional in dev
+      }
+    }
+
+    loadIp();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   function attachTrackToContainer(track: any, container: HTMLElement) {
@@ -182,6 +205,7 @@ export default function MeetPage() {
       const tokenData = await guestTokenMutation.mutateAsync({
         linkToken,
         displayName: displayName.trim(),
+        clientIp: clientIp ?? undefined,
       });
 
       const room = await Video.connect(tokenData.token, {

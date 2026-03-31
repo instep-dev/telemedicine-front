@@ -33,3 +33,19 @@ export function useCallDetailQuery(
     retry: false,
   });
 }
+
+export function useAllCallsQuery(
+  accessToken: string | null,
+  params: Omit<GetCallsParams, "cursor" | "limit"> = {},
+  enabled: boolean = true,
+) {
+  return useQuery({
+    queryKey: ["calls-all", params],
+    queryFn: () => {
+      if (!accessToken) throw new Error("No access token");
+      return historyApi.getAllCalls(accessToken, params);
+    },
+    enabled: !!accessToken && enabled,
+    retry: false,
+  });
+}
