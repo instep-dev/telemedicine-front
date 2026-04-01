@@ -16,4 +16,5 @@ export type LoginResponseDto = {
 
 export type RefreshResponseDto = {
   accessToken: string;
+  doctor?: DoctorDto;
 };

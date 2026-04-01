@@ -9,6 +9,7 @@ interface DropdownItemProps {
   baseClassName?: string;
   className?: string;
   children: React.ReactNode;
+  variant: boolean
 }
 
 export const DropdownItem: React.FC<DropdownItemProps> = ({
@@ -16,11 +17,17 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
   href,
   onClick,
   onItemClick,
-  baseClassName = "block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900",
   className = "",
+  variant,
+  baseClassName,
   children,
 }) => {
-  const combinedClasses = `${baseClassName} ${className}`.trim();
+  const computedBaseClass =
+    baseClassName ??
+    `block w-full text-left px-4 py-2 text-sm text-gray-700 ${
+      variant ? "hover:bg-blue-50 hover:text-blue-600" : "hover:bg-red-100 hover:text-red-600"
+    } transition-all duration-400`;
+  const combinedClasses = `${computedBaseClass} ${className}`.trim();
 
   const handleClick = (event: React.MouseEvent) => {
     if (tag === "button") {

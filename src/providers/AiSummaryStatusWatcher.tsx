@@ -85,15 +85,15 @@ export default function AiSummaryStatusWatcher() {
         alreadyNotifiedStatus !== currentStatus;
 
       if (becameSuccess) {
-        toast.success(`AI summary berhasil: ${displayName}`);
+        toast.success(`AI summary success: ${displayName}`);
         notifiedStatusMapRef.current[item.id] = currentStatus;
       }
 
       if (becameFailed) {
         toast.error(
           item.aiError
-            ? `AI summary gagal: ${displayName} - ${item.aiError}`
-            : `AI summary gagal: ${displayName}`,
+            ? `AI summary failed: ${displayName} - ${item.aiError}`
+            : `AI summary failed: ${displayName}`,
         );
         notifiedStatusMapRef.current[item.id] = currentStatus;
       }

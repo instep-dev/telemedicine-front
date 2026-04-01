@@ -16,7 +16,7 @@ export const useLoginMutation = () => {
 
 export const useLogoutMutation = () => {
   return useMutation({
-    mutationFn: authApi.logout,
+    mutationFn: () => authApi.logout(authStore.getState().accessToken),
     onSettled: () => {
       authStore.getState().clear();
     },
@@ -30,8 +30,8 @@ export const useLogoutMutation = () => {
  */
 export const bootstrapAuth = async () => {
   try {
-    const { accessToken } = await authApi.refresh();
-    authStore.getState().setAuth({ accessToken });
+    const { accessToken, doctor } = await authApi.refresh();
+    authStore.getState().setAuth({ accessToken, doctor });
   } catch (err: any) {
     // 401 = belum login => normal, cukup clear
     authStore.getState().clear();

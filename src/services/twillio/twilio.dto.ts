@@ -12,6 +12,7 @@ export type DoctorTokenResponse = {
 export type GuestTokenBody = {
   linkToken: string;
   displayName: string;
+  clientIp?: string | null;
 };
 
 export type GuestTokenResponse = {

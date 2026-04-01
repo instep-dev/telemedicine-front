@@ -12,7 +12,17 @@ export const authApi = {
     return res.data;
   },
 
-  async logout(): Promise<void> {
-    await http.post("/auth/logout");
+  async logout(accessToken?: string | null): Promise<void> {
+    await http.post(
+      "/auth/logout",
+      {},
+      accessToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        : undefined,
+    );
   },
 };

@@ -56,6 +56,7 @@ export type GetAiResultDetailResponse = {
   doctorId: string | null;
   doctorName: string | null;
   roomName: string | null;
+  patientName: string | null;
   patientIdentity: string | null;
   consultationStatus: string;
   consultationStartedAt: string | null;

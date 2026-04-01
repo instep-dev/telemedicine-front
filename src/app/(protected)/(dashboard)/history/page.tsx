@@ -15,6 +15,9 @@ import {
   FadersHorizontalIcon,
   BookOpenTextIcon,
   SealCheckIcon,
+  CircleNotchIcon,
+  XIcon,
+  DatabaseIcon,
 } from "@phosphor-icons/react";
 import {
   Table,
@@ -23,10 +26,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/dashboard/ui/table";
+import { Dropdown } from "@/components/dashboard/ui/dropdown/Dropdown";
+import { DropdownItem } from "@/components/dashboard/ui/dropdown/DropdownItem";
 import { useCreateRoom } from "@/hooks/useCreateRoom";
 import { authStore } from "@/services/auth/auth.store";
 import { useCallsQuery } from "@/services/history/history.queries";
 import { formatDuration } from "@/hooks/useDurationFormat";
+import DataEmpty from "@/components/reusable/DataEmpty";
+import { EmptyIcon } from "@phosphor-icons/react";
 
 const PAGE_SIZE = 10;
 
@@ -69,6 +76,7 @@ const formatDate = (date: any) => {
   )
 };
 
+// rebase conflict
 const getStatusLabel = (status?: string | null): string => {
   if (status === "STARTED") return "STARTED";
   if (status === "CONNECTED") return "IN CALL";
@@ -87,6 +95,14 @@ const getStatusColor = (status?: string | null): "success" | "warning" | "error"
   return "light";
 };
 
+type StatusFilterValue =
+  | "all"
+  | "STARTED"
+  | "CONNECTED"
+  | "RECORDING_READY"
+  | "COMPLETED"
+  | "FAILED";
+
 const HistoryPage = () => {
   const accessToken = authStore((s) => s.accessToken);
 
@@ -94,6 +110,9 @@ const HistoryPage = () => {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
 
   const [cursorByPage, setCursorByPage] = useState<Record<number, string | undefined>>({
     1: undefined,
@@ -114,6 +133,11 @@ const HistoryPage = () => {
     setCursorByPage({ 1: undefined });
   }, [sort]);
 
+  useEffect(() => {
+    setPage(1);
+    setCursorByPage({ 1: undefined });
+  }, [statusFilter]);
+
   const currentCursor = cursorByPage[page];
 
   const { data, isLoading, isFetching, error } = useCallsQuery(
@@ -123,9 +147,30 @@ const HistoryPage = () => {
       cursor: currentCursor,
       search: search || undefined,
       sort,
+      status: statusFilter === "all" ? undefined : statusFilter,
     },
     true,
   );
+
+  const statusOptions: { value: StatusFilterValue; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "COMPLETED", label: "Completed" },
+    { value: "FAILED", label: "Failed" },
+    { value: "CONNECTED", label: "In Call" },
+    { value: "RECORDING_READY", label: "Recording" },
+    { value: "STARTED", label: "Started" },
+  ];
+
+  const activeStatusLabel =
+    statusOptions.find((option) => option.value === statusFilter)?.label ?? "Filter";
+
+  const sortOptions: { value: "newest" | "oldest"; label: string }[] = [
+    { value: "newest", label: "Newest" },
+    { value: "oldest", label: "Oldest" },
+  ];
+
+  const activeSortLabel =
+    sortOptions.find((option) => option.value === sort)?.label ?? "Newest";
 
   useEffect(() => {
     const nextCursor = data?.pagination?.nextCursor;
@@ -226,7 +271,7 @@ const HistoryPage = () => {
               <MagnifyingGlassIcon />
             </span>
             <Input
-              placeholder="Search room / identity / doctor..."
+              placeholder="Search patient name"
               className="pl-10"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -235,23 +280,76 @@ const HistoryPage = () => {
 
           <div className="flex items-center gap-3">
             <div className="relative">
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as "newest" | "oldest")}
-                className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-10 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+              <Button
+                variant="outline"
+                onClick={() => setIsSortOpen((prev) => !prev)}
+                className="dropdown-toggle pr-10"
+                endIcon={<CaretDownIcon />}
               >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-              </select>
-
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                <CaretDownIcon />
-              </span>
+                {activeSortLabel}
+              </Button>
+              <Dropdown
+                isOpen={isSortOpen}
+                onClose={() => setIsSortOpen(false)}
+                className="w-36 p-2"
+              >
+                {sortOptions.map((option) => {
+                  const isActive = option.value === sort;
+                  return (
+                    <DropdownItem
+                      variant={true}
+                      key={option.value}
+                      onItemClick={() => {
+                        setSort(option.value);
+                        setIsSortOpen(false);
+                      }}
+                      className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium ${
+                        isActive ? "bg-blue-500 text-white" : ""
+                      }`}
+                    >
+                      {option.label}
+                    </DropdownItem>
+                  );
+                })}
+              </Dropdown>
             </div>
 
-            <Button variant="outline" startIcon={<FadersHorizontalIcon />}>
-              Filter
-            </Button>
+            <div className="relative">
+              <Button
+                variant="outline"
+                startIcon={<FadersHorizontalIcon />}
+                onClick={() => setIsFilterOpen((prev) => !prev)}
+                className="dropdown-toggle"
+              >
+                {activeStatusLabel}
+              </Button>
+              <Dropdown
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                className="w-44 p-2 "
+              >
+                {statusOptions.map((option) => {
+                  const isActive = option.value === statusFilter;
+                  return (
+                    <DropdownItem
+                      variant={true}
+                      key={option.value}
+                      onItemClick={() => {
+                        setStatusFilter(option.value);
+                        setIsFilterOpen(false);
+                      }}
+                      className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium ${
+                        isActive
+                          ? "bg-blue-500 text-white"
+                          : ""
+                      }`}
+                    >
+                      {option.label}
+                    </DropdownItem>
+                  );
+                })}
+              </Dropdown>
+            </div>
           </div>
         </div>
 
@@ -306,71 +404,71 @@ const HistoryPage = () => {
               </TableHeader>
 
               <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {isLoading || isFetching ? (
-                  <TableRow>
-                    <TableCell className="px-6 py-6 text-sm text-gray-500" colSpan={7}>
-                      Loading calls...
+                {rows.map((item, i) => (
+                  <TableRow key={item.id} className={`${i % 2 ? "bg-[#f9fafb]/50" : ""} hover:bg-[#f9fafb] transition-all duration-300 cursor-pointer`}>
+                    <TableCell className="border-b border-gray-200 px-6 py-4 text-start">
+                      <div className="block text-gray-500 text-theme-sm dark:text-white/90 flex items-center gap-x-1">
+                        {item.doctorName ?? "-"}
+                        <SealCheckIcon className="text-green-500" size={12} weight="fill"/>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="group cursor-pointer border-b border-gray-200 p-6 relative text-theme-sm text-gray-500 dark:text-gray-400">
+                      {item.patientName ?? "-"}
+                      <div className="absolute min-w-52 group-hover:opacity-100 opacity-0 -top-6 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-white shadow border">
+                        <div className="p-2 relative">
+                          {item.patientIdentity ?? "-"}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                      {item.roomName ?? item.roomSid ?? "-"}
+                    </TableCell>
+
+                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                      {formatDuration(item.durationSec)}
+                    </TableCell>
+
+                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                      {formatDate(item.createdAt)}
+                    </TableCell>
+
+                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                      <Badge size="sm" color={getStatusColor(item.status)}>
+                        {getStatusLabel(item.status)}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="border-b border-gray-200 p-6 text-end">
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:border-brand-300 hover:text-brand-500 dark:border-gray-800 dark:text-gray-400">
+                          <BookOpenTextIcon className="h-4 w-4 text-primary" />
+                        </button>
+                        <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:border-red-300 hover:text-brand-500 dark:border-gray-800 dark:text-gray-400">
+                          <TrashIcon className="h-4 w-4 text-red-500" />
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell className="px-6 py-6 text-sm text-gray-500 flex items-center justify-center border w-full" colSpan={5}>
-                      Tidak ada data call.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rows.map((item, i) => (
-                    <TableRow key={item.id} className={`${i % 2 ? "bg-[#f9fafb]/50" : ""} hover:bg-[#f9fafb] transition-all duration-300 cursor-pointer`}>
-                      <TableCell className="border-b border-gray-200 px-6 py-4 text-start">
-                        <div className="block text-gray-500 text-theme-sm dark:text-white/90 flex items-center gap-x-1">
-                          {item.doctorName ?? "-"}
-                          <SealCheckIcon className="text-green-500" size={12} weight="fill"/>
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="group cursor-pointer border-b border-gray-200 p-6 relative text-theme-sm text-gray-500 dark:text-gray-400">
-                        {item.patientName ?? "-"}
-                        <div className="absolute min-w-52 group-hover:opacity-100 opacity-0 -top-6 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-white shadow border">
-                          <div className="p-2 relative">
-                            {item.patientIdentity ?? "-"}
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
-                        {item.roomName ?? item.roomSid ?? "-"}
-                      </TableCell>
-
-                      <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
-                        {formatDuration(item.durationSec)}
-                      </TableCell>
-
-                      <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
-                        {formatDate(item.createdAt)}
-                      </TableCell>
-
-                      <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
-                        <Badge size="sm" color={getStatusColor(item.status)}>
-                          {getStatusLabel(item.status)}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell className="border-b border-gray-200 p-6 text-end">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:border-brand-300 hover:text-brand-500 dark:border-gray-800 dark:text-gray-400">
-                            <BookOpenTextIcon className="h-4 w-4 text-primary" />
-                          </button>
-                          <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:border-red-300 hover:text-brand-500 dark:border-gray-800 dark:text-gray-400">
-                            <TrashIcon className="h-4 w-4 text-red-500" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
+
+          {isLoading || isFetching ? (
+            <div className="p-6">
+              <DataEmpty ItemIcon={CircleNotchIcon} value="Loading" subValue="Consultations" />
+            </div>
+          ) : error ? (
+            <div className="p-6">
+              <DataEmpty ItemIcon={XIcon} value="Failed to load" subValue="Consultations" />
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="p-6">
+              <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="Starts consultations" />
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
@@ -404,12 +502,6 @@ const HistoryPage = () => {
             </div>
           </div>
         </div>
-
-        {error ? (
-          <div className="px-6 pb-5 text-sm text-error-500">
-            Gagal memuat data call.
-          </div>
-        ) : null}
       </div>
     </div>
   );

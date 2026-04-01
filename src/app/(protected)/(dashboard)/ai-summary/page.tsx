@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import PageBreadcrumb from "@/components/dashboard/common/PageBreadCrumb";
 import Button from "@/components/dashboard/ui/button/Button";
-import { ArrowClockwiseIcon, ArrowUpRightIcon, CircleNotchIcon, ClockUserIcon, InfoIcon, PlusIcon, SealWarningIcon, UserIcon, CheckIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, ArrowUpRightIcon, CircleNotchIcon, ClockUserIcon, InfoIcon, PlusIcon, SealWarningIcon, UserIcon, CheckIcon, XIcon, EmptyIcon } from "@phosphor-icons/react";
 import { useCreateRoom } from "@/hooks/useCreateRoom";
 import { authStore } from "@/services/auth/auth.store";
 import { AI_RESULTS_REFETCH_INTERVAL_MS, useAiResultsQuery } from "@/services/ai/ai.queries";
@@ -15,7 +15,8 @@ import { getInitials } from "@/hooks/useInitials";
 import { bucketStatus } from "@/hooks/useBucketStatus";
 import DataEmpty from "@/components/reusable/DataEmpty";
 import trimText from "@/hooks/useTrimText";
-
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import Input from "@/components/dashboard/form/input/InputField";
 
 // branch fix
 const CreateRoomButton = () => {
@@ -87,6 +88,28 @@ function getStageLabel(aiStatus?: string | null) {
   return value.replaceAll("_", " ");
 }
 
+const getLabel = (aiStatus?:string | null) => {
+ const value = normalizeStatus(aiStatus);
+
+  if (!value) return "Waiting to start";
+  if (value === "PENDING") return "PENDING";
+  if (value === "IN_PROGRESS") return "IN PROGRESS";
+  if (value.includes("WAITING_RECORDING")) return "WAITING";
+  if (value.includes("RECORDING_STARTED")) return "RECORDING";
+  if (value.includes("RECORDING_COMPLETED")) return "RECORDING SUCCESS";
+  if (value.includes("COMPOSITION_STARTED")) return "COMPOSITION";
+  if (value.includes("DOWNLOADING_RECORDING")) return "DOWNLOADING";
+  if (value.includes("MEDIA_READY")) return "MEDIA READY";
+  if (value.includes("EXTRACTING_AUDIO")) return "EXTRACTING";
+  if (value.includes("TRANSCRIBING")) return "TRANSSCRIBING";
+  if (value.includes("TRANSCRIPTION_READY")) return "TRANSCRIPT";
+  if (value.includes("SUMMARIZING")) return "SUMMARIZING";
+  if (value === "SUCCESS") return "Success";
+  if (value === "FAILED" || value.includes("ERROR")) return "Failed";
+
+  return value.replaceAll("_", " ");
+}
+
 function getEstimatedTimeText(
   aiStatus?: string | null,
   createdAt?: string | null,
@@ -130,7 +153,7 @@ function getEstimatedTimeText(
   const sec = remainingSec % 60;
 
   if (sec === 0) return `Estimated ${min} minutes`;
-  return `Estimated ${min} minutes ${sec}`;
+  return `Estimated ${min} minutes ${sec} seconds`;
 }
 
 type TaskCardProps = {
@@ -182,7 +205,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
         <div
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium ${avatarTone}`}
         >
-          {getInitials(task.patientName)}
+          {getInitials(task.patientName || task.patientIdentity)}
         </div>
       </div>
 
@@ -236,9 +259,9 @@ const TaskCard = ({ task }: TaskCardProps) => {
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <span
-          className={`inline-flex items-center rounded-lg px-3 py-1 text-xs font-medium ${badgeTone}`}
+          className={`inline-flex uppercase items-center rounded-lg px-3 py-1 text-xs font-medium ${badgeTone}`}
         >
-          {task.aiStatus || "UNKNOWN"}
+          {getLabel(task.aiStatus || "unknown")}
         </span>
 
         <Link
@@ -260,6 +283,9 @@ export default function AiSummary() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [refreshCountdown, setRefreshCountdown] = useState(REFRESH_INTERVAL_SEC);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  // const [error, isError] = useState(true)
 
   useEffect(() => {
     setAccessToken(authStore.getState().accessToken);
@@ -271,15 +297,26 @@ export default function AiSummary() {
     return () => unsubscribe();
   }, []);
 
-  const { data, isLoading, isFetching, error, dataUpdatedAt } = useAiResultsQuery(
+  const { data, isLoading, error, isFetching, dataUpdatedAt } = useAiResultsQuery(
     accessToken,
     {
       limit: 18,
       sort: "newest",
       cursor,
+      search: searchQuery ? searchQuery : undefined,
     },
     true,
   );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const trimmed = searchInput.trim();
+      setSearchQuery(trimmed);
+      setCursor(undefined);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -346,58 +383,75 @@ export default function AiSummary() {
 
   const isAllView = activeFilter === "all";
   const singleColumn = !isAllView ? kanbanColumns[0] : null;
+  const visibleCount = isAllView
+    ? items.length
+    : singleColumn?.tasks.length ?? 0;
 
   return (
     <main>
       <PageBreadcrumb pageTitle="AI Summary" />
 
       <div className="rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-4 p-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="inline-flex w-full flex-wrap items-center gap-2 rounded-lg bg-[#f2f4f7] p-0.5 text-sm lg:w-auto">
-            {filterData.map((item, i) => {
-              const color = [
-                "bg-brand-50 text-primary",
-                "bg-green-50 text-green-600",
-                "bg-yellow-50 text-yellow-600",
-                "bg-red-50 text-red-600",
-              ];
+        
+        <div className="gap-4 p-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="relative w-full md:max-w-xs mb-6">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+              <MagnifyingGlassIcon />
+            </span>
+            <Input
+              placeholder="Search patient name"
+              className="pl-10"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="inline-flex w-full flex-wrap items-center gap-2 rounded-lg bg-[#f2f4f7] p-0.5 text-sm lg:w-auto">
+              {filterData.map((item, i) => {
+                const color = [
+                  "bg-brand-50 text-primary",
+                  "bg-green-50 text-green-600",
+                  "bg-yellow-50 text-yellow-600",
+                  "bg-red-50 text-red-600",
+                ];
 
-              const isActive = activeFilter === item.value;
+                const isActive = activeFilter === item.value;
 
-              return (
-                <button
-                  key={item.value}
-                  onClick={() => setActiveFilter(item.value)}
-                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 font-medium transition-all duration-200 ${
-                    isActive
-                      ? "border-gray-200 bg-white text-gray-900 shadow-theme-xs"
-                      : "border-transparent text-gray-600 hover:text-gray-800"
-                  }`}
-                >
-                  <span>{item.title}</span>
-                  <span
-                    className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      isActive ? color[i] : "bg-gray-200 text-gray-700"
+                return (
+                  <button
+                    key={item.value}
+                    onClick={() => setActiveFilter(item.value)}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 font-medium transition-all duration-200 ${
+                      isActive
+                        ? "border-gray-200 bg-white text-gray-900 shadow-theme-xs"
+                        : "border-transparent text-gray-600 hover:text-gray-800"
                     }`}
                   >
-                    {item.count}
-                  </span>
-                </button>
-              );
-            })}
+                    <span>{item.title}</span>
+                    <span
+                      className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        isActive ? color[i] : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+              <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    startIcon={<ArrowClockwiseIcon className={`animate-spin`} />}
+                  >
+                    {isFetching ? "Refreshing..." : `Auto Refresh ${refreshCountdown}s`}
+                  </Button>
+                  <CreateRoomButton />
+                </div>
+              </div>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              startIcon={<ArrowClockwiseIcon className={`animate-spin`} />}
-            >
-              {isFetching ? "Refreshing..." : `Auto Refresh ${refreshCountdown}s`}
-            </Button>
-            <CreateRoomButton />
-          </div>
-        </div>
-
+          
         {grouped.inProgress.length > 0 && (
           <div className="mx-6 mb-0 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700 flex items-center gap-x-2 mb-6">
             <div className="w-4 h-4 flex items-center justify-center">
@@ -411,15 +465,15 @@ export default function AiSummary() {
 
         {isLoading ? (
           <div className="p-6">
-            <DataEmpty value={"Loading AI summaries..."} subValue={""}/>
+            <DataEmpty ItemIcon={CircleNotchIcon} value="Loading" subValue="AI Summaries" />
           </div>
         ) : error ? (
           <div className="p-6">
-            <DataEmpty value={"Failed to load "} subValue={"AI summaries."}/>
+            <DataEmpty ItemIcon={XIcon} value="Failed to load" subValue="Summaries" />
           </div>
-        ) : items.length === 0 ? (
+        ) : visibleCount === 0 ? (
           <div className="p-6">
-            <DataEmpty value={"Data Empty"} subValue={"starts creating room"}/>
+            <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="Starts consultations" />
           </div>
         ) : (
           <>
@@ -446,7 +500,11 @@ export default function AiSummary() {
 
                     <div className="space-y-4">
                       {column.tasks.length === 0 ? (
-                        <DataEmpty value={"Data Empty"} subValue={"starts creating room"}/>
+                        <DataEmpty
+                          ItemIcon={EmptyIcon}
+                          value="Data Empty"
+                          subValue="Starts consultations"
+                        />
                       ) : (
                         column.tasks.map((task) => (
                           <TaskCard key={task.id} task={task} />
@@ -473,15 +531,11 @@ export default function AiSummary() {
                       </div>
                     </div>
 
-                    {singleColumn.tasks.length === 0 ? (
-                      <DataEmpty value={"Data Empty"} subValue={"starts creating room"}/>
-                    ) : (
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {singleColumn.tasks.map((task) => (
-                          <TaskCard key={task.id} task={task} />
-                        ))}
-                      </div>
-                    )}
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {singleColumn.tasks.map((task) => (
+                        <TaskCard key={task.id} task={task} />
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
