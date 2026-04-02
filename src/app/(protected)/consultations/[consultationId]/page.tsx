@@ -4,13 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Video, { type Room, type RemoteParticipant, type RemoteTrack } from "twilio-video";
 import { toast } from "react-toastify";
-import { ChatCenteredDotsIcon, GearSixIcon, MicrophoneIcon, MicrophoneSlashIcon, PhoneXIcon, UsersThreeIcon, VideoCameraIcon, VideoCameraSlashIcon } from "@phosphor-icons/react";
+import { ShareIcon, MicrophoneIcon, MicrophoneSlashIcon, PhoneXIcon, VideoCameraIcon, VideoCameraSlashIcon, SealCheckIcon, CircleNotchIcon, CheckIcon, ArrowsOutSimpleIcon, ArrowsOutIcon, UserIcon } from "@phosphor-icons/react";
+import { motion, type Transition } from "framer-motion";
 import { authStore } from "@/services/auth/auth.store";
 import {
   useDoctorTokenMutation,
   useEndCallMutation,
 } from "@/services/twillio/twilio.queries";
 import { useConsultationStore } from "@/services/consultations/consultations.store";
+import Badge from "@/components/dashboard/ui/badge/Badge";
+
 
 export default function DoctorCallPage() {
   const router = useRouter();
@@ -29,6 +32,20 @@ export default function DoctorCallPage() {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [isEndingCall, setIsEndingCall] = useState(false);
+  const [isLocalFullscreen, setIsLocalFullscreen] = useState(false);
+  const showSkeleton = !connected && !errMsg;
+  const remoteIsPip = isLocalFullscreen;
+  const localIsPip = !isLocalFullscreen;
+  const fullscreenClass = "absolute inset-0 z-0 w-full h-full overflow-hidden bg-white";
+  const pipClass = `absolute z-20 w-96 h-72 bottom-8 right-8 overflow-hidden rounded-3xl ${
+    connected ? "" : "border"
+  }`;
+  const layoutTransition: Transition = {
+    type: "spring",
+    stiffness: 260,
+    damping: 28,
+    mass: 0.9,
+  };
 
   const roomRef = useRef<Room | null>(null);
   const localRef = useRef<HTMLDivElement | null>(null);
@@ -256,6 +273,10 @@ export default function DoctorCallPage() {
     setCamOn(next);
   }
 
+  function toggleLayout() {
+    setIsLocalFullscreen((v) => !v);
+  }
+
   async function endCall() {
     if (!consultationId || !accessToken || endCallMutation.isPending || isEndingCall) return;
 
@@ -295,201 +316,201 @@ export default function DoctorCallPage() {
   }
 
 
-
   return (
-    <div className="min-h-[100dvh] w-full bg-slate-100 p-4">
-      <div className="flex h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-theme-xl">
-        <header className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-600 text-sm font-semibold">
-              DR
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-slate-500">Consultation</span>
-              <span className="text-sm font-semibold text-slate-900">
-                Room {activeConsultation?.roomName ?? "-"}
-              </span>
-            </div>
-          </div>
-
-          <div className="text-xs font-semibold text-slate-500"># Dashboard v2</div>
-
-          <div className="flex items-center gap-2">
-            {connected && (
-              <div className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">
-                <span className="h-2 w-2 rounded-full bg-red-500" />
-                Recording
-              </div>
-            )}
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50">
-              <GearSixIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={leaveToSummary}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+    <div className="h-screen w-full relative ">        
+      <motion.div
+        layout
+        transition={layoutTransition}
+        className={remoteIsPip ? pipClass : fullscreenClass}
+        style={{
+          originX: remoteIsPip ? 1 : 0.5,
+          originY: remoteIsPip ? 1 : 0.5,
+          borderRadius: remoteIsPip ? 24 : 0,
+        }}
+      >
+        <div
+          ref={remoteRef}
+          className={`absolute inset-0 ${showSkeleton ? "opacity-0" : ""} ${remoteIsPip ? "rounded-3xl" : ""}`}
+        />
+        {showSkeleton && (
+          <>
+            <div
+              className={`absolute inset-0 ${remoteIsPip ? "rounded-3xl" : ""} bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 animate-pulse`}
+            />
+            <div
+              className={`absolute ${remoteIsPip ? "left-4 top-4 h-6 w-28" : "left-8 top-8 h-7 w-32"} rounded-full bg-slate-200/80 animate-pulse`}
+            />
+            <div
+              className={`absolute ${remoteIsPip ? "left-4 bottom-4 h-6 w-16" : "left-8 bottom-8 h-6 w-20"} rounded-full bg-slate-200/80 animate-pulse`}
+            />
+          </>
+        )}
+        {!showSkeleton && (
+          <>
+            <div
+              className={`absolute ${remoteIsPip ? "left-4 top-4 text-xs" : "left-8 top-8 text-sm"} rounded-full bg-white/10 backdrop-blur-xl px-3 py-2 text-white flex items-center gap-1`}
             >
-              Back
+              <UserIcon className="text-sm" weight="fill"/>
+              Patient name
+            </div>
+            <div
+              className={`absolute ${remoteIsPip ? "left-4 bottom-4" : "left-8 bottom-8"} rounded-full bg-white/10 backdrop-blur-xl px-3 py-2 text-xs text-white`}
+            >
+              Patient
+            </div>
+          </>
+        )}
+      </motion.div>
+
+      <div className="text-xs absolute top-8 right-8 text-slate-500 z-30">
+        {showSkeleton ? (
+          <div className="h-7 w-28 rounded-full bg-slate-200/80 animate-pulse" />
+        ) : connected ? (
+          <Badge className="flex items-center gap-1" color="success">
+            <CheckIcon weight="bold" className=" text-xs text-success"/>
+            Connected
+          </Badge>
+        ) : (
+          <Badge className="flex items-center gap-1" color="warning">
+            <CircleNotchIcon className="animate-spin text-xs text-success"/>
+            Connecting
+          </Badge>
+        )}
+      </div>
+
+      <motion.div
+        layout
+        transition={layoutTransition}
+        className={localIsPip ? pipClass : fullscreenClass}
+        style={{
+          originX: localIsPip ? 1 : 0.5,
+          originY: localIsPip ? 1 : 0.5,
+          borderRadius: localIsPip ? 24 : 0,
+        }}
+      >
+        <div
+          ref={localRef}
+          className={`absolute inset-0 ${showSkeleton ? "opacity-0" : ""} ${localIsPip ? "rounded-3xl" : ""}`}
+        />
+        {showSkeleton && (
+          <>
+            <div
+              className={`absolute inset-0 ${localIsPip ? "rounded-3xl" : ""} bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 animate-pulse`}
+            />
+            <div
+              className={`absolute ${localIsPip ? "left-4 top-4 h-6 w-28" : "left-8 top-8 h-7 w-32"} rounded-full bg-slate-200/80 animate-pulse`}
+            />
+            <div
+              className={`absolute ${localIsPip ? "left-4 bottom-4 h-6 w-16" : "left-8 bottom-8 h-6 w-20"} rounded-full bg-slate-200/80 animate-pulse`}
+            />
+          </>
+        )}
+        {!showSkeleton && (
+          <>
+            <div
+              className={`absolute ${localIsPip ? "left-4 top-4 text-xs" : "left-8 top-8 text-sm"} rounded-full bg-white/10 backdrop-blur-xl px-3 py-2 text-white flex items-center gap-1`}
+            >
+              <SealCheckIcon className="text-sm text-green-400" weight="fill"/>
+              Dr. Test Satu
+            </div>
+            <div
+              className={`absolute ${localIsPip ? "left-4 bottom-4" : "left-8 bottom-8"} rounded-full bg-white/10 backdrop-blur-xl px-3 py-2 text-xs text-white`}
+            >
+              You
+            </div>
+          </>
+        )}
+      </motion.div>
+
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-between gap-4 rounded-full bg-white/10 backdrop-blur-xl px-6 py-3 shadow-theme-xs">
+        {showSkeleton ? (
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-slate-200/80 animate-pulse" />
+            <div className="h-10 w-10 rounded-full bg-slate-200/80 animate-pulse" />
+            <div className="h-10 w-10 rounded-full bg-slate-200/80 animate-pulse" />
+            <div className="h-10 w-10 rounded-full bg-slate-200/80 animate-pulse" />
+            <div className="h-10 w-10 rounded-full bg-slate-200/80 animate-pulse" />
+          </div>
+        ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLayout}
+              disabled={!connected || isEndingCall}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
+                isLocalFullscreen
+                  ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+              } disabled:opacity-50`}
+              aria-label="Toggle layout"
+            >
+              {isLocalFullscreen ? (
+                <ArrowsOutSimpleIcon className="h-5 w-5 rotate-90" />
+              ) : (
+                <ArrowsOutIcon className="h-5 w-5" />
+              )}
+            </button>
+
+            <button
+              onClick={toggleMic}
+              disabled={!connected || isEndingCall}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
+                micOn
+                  ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+              } disabled:opacity-50`}
+              aria-label="Toggle microphone"
+            >
+              {micOn ? (
+                <MicrophoneIcon className="h-5 w-5" />
+              ) : (
+                <MicrophoneSlashIcon className="h-5 w-5" />
+              )}
+            </button>
+
+            <button
+              onClick={toggleCam}
+              disabled={!connected || isEndingCall}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
+                camOn
+                  ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+              } disabled:opacity-50`}
+              aria-label="Toggle camera"
+            >
+              {camOn ? (
+                <VideoCameraIcon className="h-5 w-5" />
+              ) : (
+                <VideoCameraSlashIcon className="h-5 w-5" />
+              )}
+            </button>
+
+            <button
+              onClick={copyLink}
+              disabled={!patientUrl}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              <ShareIcon/>
+            </button>
+
+            <button
+              onClick={endCall}
+              disabled={isEndingCall}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              aria-label="End call"
+            >
+              <PhoneXIcon className="h-5 w-5" />
             </button>
           </div>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-4 bg-slate-50 p-4">
-          <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-            <section className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-theme-xs">
-                  <div ref={remoteRef} className="absolute inset-0" />
-                  <div className="absolute left-3 top-3 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-600">
-                    Remote
-                  </div>
-                  {!connected && (
-                    <div className="absolute inset-0 grid place-items-center text-slate-400">
-                      Connecting...
-                    </div>
-                  )}
-                  <div className="absolute bottom-3 left-3 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700">
-                    Patient
-                  </div>
-                </div>
-
-                <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-theme-xs">
-                  <div ref={localRef} className="absolute inset-0" />
-                  <div className="absolute left-3 top-3 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-600">
-                    You
-                  </div>
-                  {!connected && (
-                    <div className="absolute inset-0 grid place-items-center text-slate-400">
-                      Starting camera...
-                    </div>
-                  )}
-                  <div className="absolute bottom-3 left-3 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700">
-                    You
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 shadow-theme-xs">
-                <div className="text-xs text-slate-500">
-                  Consultation ? {activeConsultation?.roomName ?? "-"}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={toggleMic}
-                    disabled={!connected || isEndingCall}
-                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
-                      micOn
-                        ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                        : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                    } disabled:opacity-50`}
-                    aria-label="Toggle microphone"
-                  >
-                    {micOn ? (
-                      <MicrophoneIcon className="h-5 w-5" />
-                    ) : (
-                      <MicrophoneSlashIcon className="h-5 w-5" />
-                    )}
-                  </button>
-
-                  <button
-                    onClick={toggleCam}
-                    disabled={!connected || isEndingCall}
-                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
-                      camOn
-                        ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                        : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                    } disabled:opacity-50`}
-                    aria-label="Toggle camera"
-                  >
-                    {camOn ? (
-                      <VideoCameraIcon className="h-5 w-5" />
-                    ) : (
-                      <VideoCameraSlashIcon className="h-5 w-5" />
-                    )}
-                  </button>
-
-                  <button
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    aria-label="Participants"
-                  >
-                    <UsersThreeIcon className="h-5 w-5" />
-                  </button>
-
-                  <button
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    aria-label="Chat"
-                  >
-                    <ChatCenteredDotsIcon className="h-5 w-5" />
-                  </button>
-
-                  <button
-                    onClick={endCall}
-                    disabled={isEndingCall}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                    aria-label="End call"
-                  >
-                    <PhoneXIcon className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="text-xs text-slate-500">
-                  {connected ? "Live" : "Connecting"}
-                </div>
-              </div>
-            </section>
-
-            <aside className="flex flex-col rounded-2xl border border-slate-200 bg-white">
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <h3 className="text-sm font-semibold text-slate-800">Participants</h3>
-                <button className="text-slate-400 hover:text-slate-600">x</button>
-              </div>
-
-              <div className="flex-1 space-y-3 px-4 py-3 text-sm">
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                    <span className="text-slate-700">You</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <MicrophoneIcon className="h-4 w-4" />
-                    <VideoCameraIcon className="h-4 w-4" />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                    <span className="text-slate-700">Patient</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <MicrophoneSlashIcon className="h-4 w-4" />
-                    <VideoCameraSlashIcon className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 border-t border-slate-200 px-4 py-3">
-                <button className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
-                  Invite People
-                </button>
-                <button
-                  onClick={copyLink}
-                  disabled={!patientUrl}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-                >
-                  Copy Link
-                </button>
-              </div>
-            </aside>
-          </div>
+        </>
+        )}
+      </div>
 
           {errMsg && (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {errMsg}
             </div>
           )}
-        </div>
-      </div>
     </div>
   );
 }

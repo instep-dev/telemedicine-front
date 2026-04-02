@@ -220,7 +220,7 @@ export default function MonthlyTarget({
             <>
               You did{" "}
               <span className="font-medium text-black">{todayCalls}</span>{" "}
-              consultation{todayCalls >= 1 ? "s" : ""}, {todayCalls === 0 ? "Try to start the consultation" : "Keep up the good work!"}
+              consultation{todayCalls >= 2 ? "s" : ""} today, {todayCalls === 0 ? "Try to start the consultation" : "Keep up the good work!"}
             </>
           )}
         </p>
