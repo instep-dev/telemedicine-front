@@ -41,10 +41,9 @@ export default function DoctorCallPage() {
     connected ? "" : "border"
   }`;
   const layoutTransition: Transition = {
-    type: "spring",
-    stiffness: 260,
-    damping: 28,
-    mass: 0.9,
+    type: "tween",
+    duration: 0.22,
+    ease: [0.16, 1, 0.3, 1],
   };
 
   const roomRef = useRef<Room | null>(null);
@@ -317,7 +316,7 @@ export default function DoctorCallPage() {
 
 
   return (
-    <div className="h-screen w-full relative ">        
+    <div className="h-screen w-full relative bg-black">        
       <motion.div
         layout
         transition={layoutTransition}
