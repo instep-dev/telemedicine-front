@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
-import { Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Instrument_Serif, Inter } from "next/font/google";
 import "flatpickr/dist/flatpickr.css";
 import "../styles/globals.css";
 import Providers from "@/providers/Providers";
 import SmoothScroll from "@/animations/SmoothScroll";
 import { cn } from "@/lib/utils";
 
-const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
-
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  display: "swap",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -24,8 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-mono", jetbrainsMono.variable)}>
-      <body className={`${interTight.variable} font-sans antialiased`}>
+    <html
+      lang="en"
+      className={cn(jetbrainsMono.variable, inter.variable, instrumentSerif.variable)}
+    >
+      <body className="font-inter antialiased bg-backgr">
         <SmoothScroll>
           <Providers>
             {children}
