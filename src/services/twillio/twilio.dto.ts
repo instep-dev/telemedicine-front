@@ -61,3 +61,14 @@ export type CallSessionResultResponse = {
   };
   playableUrl: string | null;
 };
+
+export type VideoTranscriptionPayload = {
+  consultationId: string;
+  transcription: string;
+  participant?: string;
+  partialResults?: boolean;
+  stability?: number;
+  languageCode?: string;
+  sequenceNumber?: number;
+  timestamp?: string;
+};

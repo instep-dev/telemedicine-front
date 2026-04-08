@@ -121,12 +121,45 @@ export default function MeetPage() {
     };
   }, []);
 
-  function attachTrackToContainer(track: any, container: HTMLElement) {
+  function attachTrackToContainer(track: any, container: HTMLElement, fit: "cover" | "contain") {
     const el: HTMLElement = track.attach();
     (el as any).style.width = "100%";
     (el as any).style.height = "100%";
-    (el as any).style.objectFit = "cover";
+    (el as any).style.objectFit = fit;
     container.appendChild(el);
+  }
+
+  function attachRemoteVideo(track: any, container: HTMLElement) {
+    container.innerHTML = "";
+
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "relative";
+    wrapper.style.width = "100%";
+    wrapper.style.height = "100%";
+    wrapper.style.overflow = "hidden";
+    wrapper.style.background = "#000";
+
+    const bg: HTMLElement = track.attach();
+    (bg as any).style.position = "absolute";
+    (bg as any).style.inset = "0";
+    (bg as any).style.width = "100%";
+    (bg as any).style.height = "100%";
+    (bg as any).style.objectFit = "cover";
+    (bg as any).style.filter = "blur(12px)";
+    (bg as any).style.transform = "scale(1.08)";
+    (bg as any).style.opacity = "0.9";
+
+    const fg: HTMLElement = track.attach();
+    (fg as any).style.position = "absolute";
+    (fg as any).style.inset = "0";
+    (fg as any).style.width = "100%";
+    (fg as any).style.height = "100%";
+    (fg as any).style.objectFit = "contain";
+    (fg as any).style.zIndex = "1";
+
+    wrapper.appendChild(bg);
+    wrapper.appendChild(fg);
+    container.appendChild(wrapper);
   }
 
   function attachLocalVideo(room: Room) {
@@ -136,7 +169,7 @@ export default function MeetPage() {
     room.localParticipant.tracks.forEach((pub) => {
       const track: any = pub.track;
       if (track && track.kind === "video") {
-        attachTrackToContainer(track, localRef.current!);
+        attachTrackToContainer(track, localRef.current!, "cover");
       }
     });
   }
@@ -152,8 +185,7 @@ export default function MeetPage() {
 
         if (track.kind === "video") {
           if (!remoteRef.current) return;
-          remoteRef.current.innerHTML = "";
-          attachTrackToContainer(track, remoteRef.current);
+          attachRemoteVideo(track, remoteRef.current);
         } else if (track.kind === "audio") {
           const audioEl = track.attach();
           (audioEl as any).style.display = "none";
@@ -169,8 +201,7 @@ export default function MeetPage() {
 
       if (t.kind === "video") {
         if (!remoteRef.current) return;
-        remoteRef.current.innerHTML = "";
-        attachTrackToContainer(t, remoteRef.current);
+        attachRemoteVideo(t, remoteRef.current);
       } else if (t.kind === "audio") {
         const audioEl = (t as any).attach();
         (audioEl as any).style.display = "none";

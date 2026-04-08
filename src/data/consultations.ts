@@ -75,7 +75,7 @@ export const consultationHistoryData: ConsultationHistoryItem[] = [
       },
       transcribedAt: "2026-03-08T09:00:00Z",
       summarizedAt: "2026-03-08T09:12:00Z",
-      aiModel: "whisper-large-v3 + qwen2.5-7b",
+      aiModel: "twilio-realtime + gemini",
     },
   },
   {
@@ -105,7 +105,7 @@ export const consultationHistoryData: ConsultationHistoryItem[] = [
       },
       transcribedAt: "2026-03-07T10:05:00Z",
       summarizedAt: "2026-03-07T10:18:00Z",
-      aiModel: "whisper-large-v3 + qwen2.5-7b",
+      aiModel: "twilio-realtime + gemini",
     },
   },
   {
@@ -129,7 +129,7 @@ export const consultationHistoryData: ConsultationHistoryItem[] = [
       soapJson: null,
       transcribedAt: "2026-03-06T14:20:00Z",
       summarizedAt: null,
-      aiModel: "whisper-large-v3 + qwen2.5-7b",
+      aiModel: "twilio-realtime + gemini",
     },
   },
   {
