@@ -72,6 +72,7 @@ function getStageLabel(aiStatus?: string | null) {
   if (!value) return "Waiting to start";
   if (value === "PENDING") return "Waiting in queue";
   if (value === "IN_PROGRESS") return "AI processing started";
+  if (value.includes("WAITING_TRANSCRIPT")) return "Waiting for transcript";
   if (value.includes("WAITING_RECORDING")) return "Waiting for recording";
   if (value.includes("RECORDING_STARTED")) return "Recording started";
   if (value.includes("RECORDING_COMPLETED")) return "Recording completed";
@@ -79,7 +80,7 @@ function getStageLabel(aiStatus?: string | null) {
   if (value.includes("DOWNLOADING_RECORDING")) return "Downloading recording";
   if (value.includes("MEDIA_READY")) return "Media ready";
   if (value.includes("EXTRACTING_AUDIO")) return "Extracting audio from MP4";
-  if (value.includes("TRANSCRIBING")) return "Transcribing with Faster Whisper";
+  if (value.includes("TRANSCRIBING")) return "Transcribing (Realtime)";
   if (value.includes("TRANSCRIPTION_READY")) return "Transcript ready";
   if (value.includes("SUMMARIZING")) return "Generating SOAP summary with Gemini";
   if (value === "SUCCESS") return "Success";
@@ -94,6 +95,7 @@ const getLabel = (aiStatus?:string | null) => {
   if (!value) return "Waiting to start";
   if (value === "PENDING") return "PENDING";
   if (value === "IN_PROGRESS") return "IN PROGRESS";
+  if (value.includes("WAITING_TRANSCRIPT")) return "WAITING TRANSCRIPT";
   if (value.includes("WAITING_RECORDING")) return "WAITING";
   if (value.includes("RECORDING_STARTED")) return "RECORDING";
   if (value.includes("RECORDING_COMPLETED")) return "RECORDING SUCCESS";
@@ -101,7 +103,7 @@ const getLabel = (aiStatus?:string | null) => {
   if (value.includes("DOWNLOADING_RECORDING")) return "DOWNLOADING";
   if (value.includes("MEDIA_READY")) return "MEDIA READY";
   if (value.includes("EXTRACTING_AUDIO")) return "EXTRACTING";
-  if (value.includes("TRANSCRIBING")) return "TRANSSCRIBING";
+  if (value.includes("TRANSCRIBING")) return "TRANSCRIBING";
   if (value.includes("TRANSCRIPTION_READY")) return "TRANSCRIPT";
   if (value.includes("SUMMARIZING")) return "SUMMARIZING";
   if (value === "SUCCESS") return "Success";
@@ -131,6 +133,7 @@ function getEstimatedTimeText(
   else estimatedTotalSec = 600;
 
   if (status.includes("WAITING_RECORDING")) estimatedTotalSec = 120;
+  if (status.includes("WAITING_TRANSCRIPT")) estimatedTotalSec = 60;
   if (status.includes("COMPOSITION")) estimatedTotalSec = 150;
   if (status.includes("DOWNLOADING_RECORDING")) estimatedTotalSec = 90;
   if (status.includes("EXTRACTING_AUDIO")) estimatedTotalSec = 120;
@@ -167,7 +170,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
 
   const badgeTone =
     bucket === "success"
-      ? "bg-green-50 text-green-600 "
+      ? "bg-green-50 text-green-600 border border-green-200"
       : bucket === "failed"
         ? "bg-red-50 text-red-600 border border-red-200"
         : "bg-yellow-50 text-yellow-600 border border-yellow-200";
@@ -268,7 +271,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
           href={`/dashboard/ai-summary/${task.id}`}
           className="text-xs font-medium text-brand-600 hover:text-brand-700"
         >
-          <div className="px-3 py-2 gap-x-1 flex items-center rounded-full justify-center bg-blue-50">
+          <div className="px-3 py-2 gap-x-1 flex items-center rounded-2xl justify-center bg-blue-50 border border-blue-200">
             Details
             <ArrowUpRightIcon className="text-sm text-primary" weight="bold"/>
           </div>

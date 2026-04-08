@@ -6,6 +6,7 @@ import type {
   GuestTokenResponse,
   EndCallResponse,
   CallSessionResultResponse,
+  VideoTranscriptionPayload,
 } from "./twilio.dto";
 
 export const twilioApi = {
@@ -35,6 +36,17 @@ export const twilioApi = {
   getCallResult: async (accessToken: string, consultationId: string) => {
     const res = await http.get<CallSessionResultResponse>(
       `/twilio/video/result/${consultationId}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+    return res.data;
+  },
+
+  sendTranscription: async (accessToken: string, payload: VideoTranscriptionPayload) => {
+    const res = await http.post(
+      `/twilio/video/transcription`,
+      payload,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       },
