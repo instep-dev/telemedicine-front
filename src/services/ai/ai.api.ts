@@ -3,6 +3,7 @@ import type {
   GetAiResultsParams,
   GetAiResultsResponse,
   GetAiResultDetailResponse,
+  RetryAiSummaryResponse,
 } from "./ai.dto";
 
 export const aiApi = {
@@ -29,6 +30,23 @@ export const aiApi = {
         Authorization: `Bearer ${accessToken}`,
       },
     });
+
+    return res.data;
+  },
+
+  async retryAiSummary(
+    accessToken: string,
+    consultationId: string,
+  ): Promise<RetryAiSummaryResponse> {
+    const res = await http.post<RetryAiSummaryResponse>(
+      `/ai/retry/${consultationId}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
 
     return res.data;
   },
