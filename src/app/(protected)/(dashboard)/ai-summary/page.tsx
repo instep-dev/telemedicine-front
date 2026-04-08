@@ -7,7 +7,7 @@ import Button from "@/components/dashboard/ui/button/Button";
 import { ArrowClockwiseIcon, ArrowUpRightIcon, CircleNotchIcon, ClockUserIcon, InfoIcon, PlusIcon, SealWarningIcon, UserIcon, CheckIcon, XIcon, EmptyIcon } from "@phosphor-icons/react";
 import { useCreateRoom } from "@/hooks/useCreateRoom";
 import { authStore } from "@/services/auth/auth.store";
-import { AI_RESULTS_REFETCH_INTERVAL_MS, useAiResultsQuery } from "@/services/ai/ai.queries";
+import { AI_RESULTS_REFETCH_INTERVAL_MS, useAiResultsQuery, useAiRetryMutation } from "@/services/ai/ai.queries";
 import type { AiResultItemDto } from "@/services/ai/ai.dto";
 import { CalendarCheckIcon } from "@phosphor-icons/react/dist/ssr";
 import { formatDuration } from "@/hooks/useDurationFormat";
@@ -17,6 +17,7 @@ import DataEmpty from "@/components/reusable/DataEmpty";
 import trimText from "@/hooks/useTrimText";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import Input from "@/components/dashboard/form/input/InputField";
+import { toast } from "react-toastify";
 
 // branch fix
 const CreateRoomButton = () => {
@@ -161,9 +162,11 @@ function getEstimatedTimeText(
 
 type TaskCardProps = {
   task: AiResultItemDto;
+  onRetry: (task: AiResultItemDto) => void;
+  isRetrying: boolean;
 };
 
-const TaskCard = ({ task }: TaskCardProps) => {
+const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
   const bucket = getStatusBucket(task.aiStatus);
   const summaryText = trimText(task.summary, 70);
   const aiErrorText = trimText(task.aiError, 70)
@@ -267,15 +270,32 @@ const TaskCard = ({ task }: TaskCardProps) => {
           {getLabel(task.aiStatus || "unknown")}
         </span>
 
-        <Link
-          href={`/dashboard/ai-summary/${task.id}`}
-          className="text-xs font-medium text-brand-600 hover:text-brand-700"
-        >
-          <div className="px-3 py-2 gap-x-1 flex items-center rounded-2xl justify-center bg-blue-50 border border-blue-200">
-            Details
-            <ArrowUpRightIcon className="text-sm text-primary" weight="bold"/>
-          </div>
-        </Link>
+        <div className="flex items-center gap-2">
+          {bucket === "failed" && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isRetrying}
+              onClick={() => onRetry(task)}
+              startIcon={
+                <ArrowClockwiseIcon
+                  className={isRetrying ? "animate-spin" : ""}
+                />
+              }
+            >
+              {isRetrying ? "Retrying..." : "Retry"}
+            </Button>
+          )}
+          <Link
+            href={`/dashboard/ai-summary/${task.id}`}
+            className="text-xs font-medium text-brand-600 hover:text-brand-700"
+          >
+            <div className="px-3 py-2 gap-x-1 flex items-center rounded-2xl justify-center bg-blue-50 border border-blue-200">
+              Details
+              <ArrowUpRightIcon className="text-sm text-primary" weight="bold"/>
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -288,6 +308,7 @@ export default function AiSummary() {
   const [refreshCountdown, setRefreshCountdown] = useState(REFRESH_INTERVAL_SEC);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   // const [error, isError] = useState(true)
 
   useEffect(() => {
@@ -310,6 +331,28 @@ export default function AiSummary() {
     },
     true,
   );
+
+  const retryMutation = useAiRetryMutation(accessToken);
+
+  const handleRetry = (task: AiResultItemDto) => {
+    if (!task.consultationId) return;
+    if (retryMutation.isPending) return;
+
+    setRetryingId(task.id);
+    retryMutation.mutate(task.consultationId, {
+      onSuccess: () => {
+        toast.info("Retry queued");
+      },
+      onError: (err: any) => {
+        const message =
+          err?.response?.data?.message ?? err?.message ?? "Retry failed";
+        toast.error(message);
+      },
+      onSettled: () => {
+        setRetryingId(null);
+      },
+    });
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -510,7 +553,12 @@ export default function AiSummary() {
                         />
                       ) : (
                         column.tasks.map((task) => (
-                          <TaskCard key={task.id} task={task} />
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            onRetry={handleRetry}
+                            isRetrying={retryingId === task.id}
+                          />
                         ))
                       )}
                     </div>
@@ -536,7 +584,12 @@ export default function AiSummary() {
 
                     <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {singleColumn.tasks.map((task) => (
-                        <TaskCard key={task.id} task={task} />
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onRetry={handleRetry}
+                          isRetrying={retryingId === task.id}
+                        />
                       ))}
                     </div>
                   </>

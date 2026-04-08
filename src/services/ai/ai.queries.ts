@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { aiApi } from "./ai.api";
 import type { GetAiResultsParams } from "./ai.dto";
 
@@ -57,5 +57,14 @@ export function useAiResultsWatcherQuery(
     refetchInterval: AI_RESULTS_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: true,
     staleTime: 0,
+  });
+}
+
+export function useAiRetryMutation(accessToken: string | null) {
+  return useMutation({
+    mutationFn: (consultationId: string) => {
+      if (!accessToken) throw new Error("No access token");
+      return aiApi.retryAiSummary(accessToken, consultationId);
+    },
   });
 }

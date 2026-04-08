@@ -50,6 +50,11 @@ export type GetAiResultsResponse = {
   };
 };
 
+export type RetryAiSummaryResponse = {
+  success: boolean;
+  queued: boolean;
+};
+
 export type GetAiResultDetailResponse = {
   id: string;
   consultationId: string;
