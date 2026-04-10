@@ -1,4 +1,4 @@
 export const GlobalStyles = {
-  mainContainer: "py-20",
+  mainContainer: "py-30",
   innerContainer: "max-w-6xl mx-auto",
 }

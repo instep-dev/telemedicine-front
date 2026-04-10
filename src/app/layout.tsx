@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Instrument_Serif, Inter } from "next/font/google";
-import "flatpickr/dist/flatpickr.css";
 import "../styles/globals.css";
 import Providers from "@/providers/Providers";
 import SmoothScroll from "@/animations/SmoothScroll";
@@ -40,7 +39,7 @@ export default function RootLayout({
       lang="en"
       className={cn(jetbrainsMono.variable, inter.variable, instrumentSerif.variable)}
     >
-      <body className="font-inter antialiased bg-backgr">
+      <body className="font-inter antialiased bg-background">
         <SmoothScroll>
           <Providers>
             {children}

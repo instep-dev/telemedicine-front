@@ -16,12 +16,12 @@ const Home = () => {
     <>
       <Hero/>
       <About/>
-      <Benefits/>
+      {/* <Benefits/> */}
       <Journey/>
-      <Struggle/>
-      <Solutions/>
+      {/* <Struggle/> */}
+      {/* <Solutions/> */}
       <Testimonials/>
-      <Faq/>
+      {/* <Faq/> */}
       <Cta/>
     </>
   )
