@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
 
 type Theme = "light" | "dark";
 
@@ -30,34 +30,26 @@ const applyThemeToTargets = (theme: Theme) => {
   apply(document.documentElement);
 };
 
+const FIXED_THEME: Theme = "dark";
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [isInitialized, setIsInitialized] = useState(false);
-
   useEffect(() => {
-    // This code will only run on the client side
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const initialTheme = savedTheme || "dark"; // Default to dark theme for dashboard
-
-    setTheme(initialTheme);
-    setIsInitialized(true);
+    applyThemeToTargets(FIXED_THEME);
+    try {
+      localStorage.setItem("theme", FIXED_THEME);
+    } catch {
+      // ignore storage errors
+    }
   }, []);
 
-  useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem("theme", theme);
-      applyThemeToTargets(theme);
-    }
-  }, [theme, isInitialized]);
-
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    // Intentionally no-op: dashboard uses a single fixed theme.
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: FIXED_THEME, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
