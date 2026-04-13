@@ -40,7 +40,7 @@ const Faq = () => {
           <Title
             variant={false}
             subValue={"Frequently"}
-            value="provide to you"
+            // value="provide to you"
             title={"Answers to your asked queries"}
             desc={""}
           />

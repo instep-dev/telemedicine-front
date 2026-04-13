@@ -14,7 +14,7 @@ const Solutions = () => {
           <Title
             variant={false}
             subValue={"We Provide"}
-            value="solutions"
+            // value="solutions"
             title={"Making each step of care simple for your health"}
             desc={
               "Long waiting times, limited access to specialists, and unclear reports often leave patients."

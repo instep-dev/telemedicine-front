@@ -39,7 +39,7 @@ const Benefits = () => {
         <Title
           variant={true}
           subValue={"What we"}
-          value="provide to you"
+          // value="provide to you"
           title={"What Healthjoy actually means"}
           desc={
             "From online consultations to lab tests & prescriptions, we bring complete care closer to every patient."
