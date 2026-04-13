@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState,useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSidebar } from "../context/SidebarContext";
+import { useSidebar } from "../../../context/SidebarContext";
 import { CaretDownIcon, GridFourIcon, FirstAidIcon, TableIcon, DotsNineIcon, RobotIcon } from "@phosphor-icons/react";
 import SidebarWidget from "./SidebarWidget";
 
@@ -228,7 +228,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-card text-white border-r border-cultured h-screen transition-all duration-300 ease-in-out z-50 
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"
@@ -250,12 +250,12 @@ const AppSidebar: React.FC = () => {
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <div className='flex items-center gap-x-1'>
-                <div className='w-5 h-5 bg-primary rounded-full flex items-center justify-center dark:bg-blue-400'>
+                <div className='w-5 h-5 bg-gradient-primary rounded-full flex items-center justify-center'>
                   <FirstAidIcon size={11} className='text-white' weight='fill'/>
                 </div>
                 <div className='flex items-start justify-start gap-x-1'>
-                  <h3 className='text-xl font-medium tracking-tight dark:text-white'>Telemedicine</h3>
-                  <p className='font-medium dark:text-white'>®</p>
+                  <h3 className='text-xl font-medium tracking-tight text-white'>Telemedicine</h3>
+                  <p className='font-medium text-white'>®</p>
                 </div>
               </div>
             </>
@@ -271,7 +271,7 @@ const AppSidebar: React.FC = () => {
           <div className="flex flex-col gap-4">
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-accent ${
                   !isExpanded && !isHovered
                     ? "lg:justify-center"
                     : "justify-start"

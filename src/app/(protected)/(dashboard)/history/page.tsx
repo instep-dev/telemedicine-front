@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import PageBreadcrumb from "@/components/dashboard/common/PageBreadCrumb";
 import Button from "@/components/dashboard/ui/button/Button";
 import Input from "@/components/dashboard/form/input/InputField";
 import Badge from "@/components/dashboard/ui/badge/Badge";
@@ -11,7 +10,6 @@ import {
   DownloadIcon,
   PlusIcon,
   TrashIcon,
-  MagnifyingGlassIcon,
   FadersHorizontalIcon,
   BookOpenTextIcon,
   SealCheckIcon,
@@ -245,15 +243,13 @@ const HistoryPage = () => {
 
   return (
     <div className="space-y-6">
-      <PageBreadcrumb pageTitle="Consultations History" />
-
-      <div className="overflow-hidden rounded-2xl border bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex flex-col gap-4 border-b border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
+      <div className="overflow-hidden rounded-lg border border-cultured bg-card">
+        <div className="flex flex-col gap-4 border-b border-cultured px-6 py-5 sm:flex-row sm:items-center sm:justify-between ">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            <h3 className="text-lg font-semibold text-white">
               Consultations History
             </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-accent">
               Manage your consultations and keep track.
             </p>
           </div>
@@ -266,13 +262,10 @@ const HistoryPage = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 border-b border-cultured px-6 py-5 md:flex-row md:items-center md:justify-between">
           <div className="relative w-full md:max-w-xs">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-              <MagnifyingGlassIcon />
-            </span>
             <Input
-              placeholder="Search patient name"
+              placeholder="Patient name"
               className="pl-10"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -357,96 +350,96 @@ const HistoryPage = () => {
         <div className="max-w-full overflow-x-auto">
           <div className="min-w-[1100px]">
             <Table>
-              <TableHeader className="border-b border-gray-200 dark:border-gray-800">
-                <TableRow className="bg-[#f9fafb]/50">
+              <TableHeader className="border-b border-cultured">
+                <TableRow className="">
                   <TableCell
                     isHeader
-                    className="px-6 py-4 text-start text-theme-sm font-medium tracking-tight text-black dark:text-gray-400 "
+                    className="px-6 py-4 text-start text-theme-sm font-medium text-neutral-500 "
                   >
                     Doctor  
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-4 text-start text-theme-sm font-medium tracking-tight text-black dark:text-gray-400"
+                    className="px-6 py-4 text-start text-theme-sm font-medium text-neutral-500"
                   >
                     Patient
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-4 text-start text-theme-sm font-medium tracking-tight text-black dark:text-gray-400"
+                    className="px-6 py-4 text-start text-theme-sm font-medium text-neutral-500"
                   >
                     Room
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-4 text-start text-theme-sm font-medium tracking-tight text-black dark:text-gray-400"
+                    className="px-6 py-4 text-start text-theme-sm font-medium text-neutral-500"
                   >
                     Duration
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-4 text-start text-theme-sm font-medium tracking-tight text-black dark:text-gray-400"
+                    className="px-6 py-4 text-start text-theme-sm font-medium text-neutral-500"
                   >
                     Date
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-4 text-start text-theme-sm font-medium tracking-tight text-black dark:text-gray-400"
+                    className="px-6 py-4 text-start text-theme-sm font-medium text-neutral-500"
                   >
                     Status
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-4 text-end text-theme-sm font-medium tracking-tight text-black dark:text-gray-400"
+                    className="px-6 py-4 text-end text-theme-sm font-medium text-neutral-500"
                   >
                     Action
                   </TableCell>
                 </TableRow>
               </TableHeader>
 
-              <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <TableBody className="divide-y divide-cultured">
                 {rows.map((item, i) => (
-                  <TableRow key={item.id} className={`${i % 2 ? "bg-[#f9fafb]/50" : ""} hover:bg-[#f9fafb] transition-all duration-300 cursor-pointer`}>
-                    <TableCell className="border-b border-gray-200 px-6 py-4 text-start">
-                      <div className="block text-gray-500 text-theme-sm dark:text-white/90 flex items-center gap-x-1">
+                  <TableRow key={item.id} className={`${i % 2 ? "bg-neutral-800" : ""} hover:opacity-70 transition-all duration-300 cursor-pointer`}>
+                    <TableCell className="border-b border-cultured px-6 py-4 text-start">
+                      <div className="block text-theme-sm text-white flex items-center gap-x-1">
                         {item.doctorName ?? "-"}
-                        <SealCheckIcon className="text-green-500" size={12} weight="fill"/>
+                        <SealCheckIcon className="text-blue-500" size={12} weight="fill"/>
                       </div>
                     </TableCell>
 
-                    <TableCell className="group cursor-pointer border-b border-gray-200 p-6 relative text-theme-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="group cursor-pointer border-b border-cultured p-6 relative text-theme-sm text-white">
                       {item.patientName ?? "-"}
-                      <div className="absolute min-w-52 group-hover:opacity-100 opacity-0 -top-6 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-white shadow border">
+                      <div className="absolute min-w-52 group-hover:opacity-100 opacity-0 -top-6 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-gradient-gray shadow border border-cultured">
                         <div className="p-2 relative">
                           {item.patientIdentity ?? "-"}
                         </div>
                       </div>
                     </TableCell>
 
-                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="border-b border-cultured p-6 text-theme-sm text-white">
                       {item.roomName ?? item.roomSid ?? "-"}
                     </TableCell>
 
-                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="border-b border-cultured p-6 text-theme-sm text-white">
                       {formatDuration(item.durationSec)}
                     </TableCell>
 
-                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="border-b border-cultured p-6 text-theme-sm text-white">
                       {formatDate(item.createdAt)}
                     </TableCell>
 
-                    <TableCell className="border-b border-gray-200 p-6 text-theme-sm text-gray-500 dark:text-gray-400">
+                    <TableCell className="border-b border-cultured p-6 text-theme-sm text-white">
                       <Badge size="sm" color={getStatusColor(item.status)}>
                         {getStatusLabel(item.status)}
                       </Badge>
                     </TableCell>
 
-                    <TableCell className="border-b border-gray-200 p-6 text-end">
+                    <TableCell className="border-b border-cultured p-6 text-end">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:border-brand-300 hover:text-brand-500 dark:border-gray-800 dark:text-gray-400">
-                          <BookOpenTextIcon className="h-4 w-4 text-primary" />
+                        <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:scale-110 border-brand-900 bg-brand-500/10">
+                          <BookOpenTextIcon className="h-4 w-4 text-brand-500" />
                         </button>
-                        <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:border-red-300 hover:text-brand-500 dark:border-gray-800 dark:text-gray-400">
+                        <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:scale-110 border-red-950 bg-red-500/10">
                           <TrashIcon className="h-4 w-4 text-red-500" />
                         </button>
                       </div>
@@ -473,13 +466,13 @@ const HistoryPage = () => {
         </div>
 
         <div className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Showing <span className="font-medium text-black">{rows.length}</span> item(s) on page <span className="font-medium text-black">{page}</span>
+          <p className="text-sm text-accent">
+            Showing <span className="font-medium accent text-white">{rows.length}</span> item(s) on page <span className="font-medium text-white">{page}</span>
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Page <span className="font-medium text-black">{rows.length}</span> of <span className="font-medium text-black">{totalPages}</span>
+            <span className="text-sm text-accent">
+              Page <span className="font-medium text-white">{rows.length}</span> of <span className="font-medium text-black">{totalPages}</span>
             </span>
 
             <div className="flex items-center gap-2">

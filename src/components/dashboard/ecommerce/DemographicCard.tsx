@@ -57,23 +57,23 @@ export default function DemographicCard({
   const safeMarkers = Array.isArray(markers) ? markers : [];
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+    <div className="rounded-lg border border-cultured bg-card p-5 sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            <h3 className="text-lg font-semibold text-white">
               Patients Location
             </h3>
             
           </div>
-          <p className="text-gray-500 text-theme-sm dark:text-gray-400">
+          <p className="text-accent text-theme-sm">
             City base distribution consultations
           </p>
         </div>
 
         <div>
-          <div className="text-sm flex items-center justify-end gap-x-1 text-gray-500 dark:text-gray-400">
-            <div className="w-3 h-3 rounded-full bg-gray-200 overflow-hidden border border-gray-300">
+          <div className="text-sm flex items-center justify-end gap-x-1 text-white">
+            <div className="w-3 h-3 rounded-full bg-gradient-gray overflow-hidden border border-cultured">
               <Image
                 src="/static/indonesia.jpeg"
                 className="w-full h-full object-cover object-center"
@@ -84,8 +84,8 @@ export default function DemographicCard({
             </div>
             <p className="mb-0.5">🇮🇩</p>
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 flex gap-1 items-center justify-end">
-            <span className="font-semibold text-gray-800 dark:text-white/90">{total}</span> Patients
+          <div className="text-sm text-accent flex gap-1 items-center justify-end">
+            <span className="font-semibold text-white font-semibold">{total}</span> Patients
           </div>
         </div>
         
@@ -117,7 +117,7 @@ export default function DemographicCard({
                   {item.city}
                 </p>
                 <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                  {item.count} konsultasi
+                  {item.count} Consultation
                 </span>
               </div>
 

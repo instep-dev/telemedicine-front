@@ -35,7 +35,7 @@ export const EcommerceMetrics = ({
 }: EcommerceMetricsProps) => {
   if (error) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-lg border border-cultured bg-card p-6 ">
         <DataEmpty ItemIcon={XIcon} value="Failed to load" subValue="Metrics" />
       </div>
     );
@@ -59,27 +59,27 @@ export const EcommerceMetrics = ({
     : consultationMinutes.toLocaleString("en-US");
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 ">
       {/* <!-- Metric Item Start --> */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-        <div className="flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl dark:bg-gray-800">
-          <UsersIcon className="text-primary size-5 dark:text-white/90" />
+      <div className="rounded-lg border border-cultured bg-card p-5 md:p-6 flex flex-col justify-between">
+        <div className="flex items-center justify-center w-9 h-9 bg-gradient-gray rounded-lg dark:bg-gray-800">
+          <UsersIcon className="text-white" size={16} weight="duotone"/>
         </div>
 
         <div className="flex items-end justify-between mt-5">
           <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Patients
+            <span className="text-sm text-white">
+              Total Patients
             </span>
-            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90 flex items-end gap-x-1">
+            <h4 className="mt-2 font-bold text-title-sm text-white flex items-end gap-x-1">
               {patientsDisplay}
-              <p className="text-base mb-1 ml-0.5 font-normal text-sm text-gray-500 dark:text-gray-400">Persons</p>
+              <p className="text-base mb-1 ml-0.5 text-sm text-accent">Persons</p>
             </h4>
           </div>
           {loading ? (
-            <Badge color="light">Loading</Badge>
+            <Badge size="sm" color="light">Loading</Badge>
           ) : hasPatientTrend ? (
-            <Badge color={patientTrendUp ? "success" : "error"}>
+            <Badge size="sm" color={patientTrendUp ? "success" : "error"}>
               {patientTrendUp ? (
                 <ArrowUpIcon />
               ) : (
@@ -88,30 +88,30 @@ export const EcommerceMetrics = ({
               {formatPercent(patientsChangePct)}
             </Badge>
           ) : (
-            <Badge color="light">No trend</Badge>
+            <Badge size="sm" color="light">No trend</Badge>
           )}
         </div>
       </div>
       
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-        <div className="flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl dark:bg-gray-800">
-          <ClockUserIcon className="text-primary size-5 dark:text-white/90" />
+      <div className="rounded-lg border border-cultured bg-card p-5 md:p-6">
+        <div className="flex items-center justify-center w-9 h-9 bg-gradient-gray rounded-lg dark:bg-gray-800">
+          <ClockUserIcon className="text-white" size={16} weight="duotone"/>
         </div>
         <div className="flex items-end justify-between mt-5">
           <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Consultations
+            <span className="text-sm text-white">
+              Total Consultations
             </span>
-            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90 flex items-end gap-x-1">
+            <h4 className="mt-2 font-bold text-title-sm text-white flex items-end gap-x-1">
               {minutesDisplay}
-              <p className="text-base mb-1 ml-0.5 font-normal text-sm text-gray-500 dark:text-gray-400">Minutes</p>
+              <p className="text-base mb-1 ml-0.5 text-sm text-accent">Minutes</p>
             </h4>
           </div>
 
           {loading ? (
-            <Badge color="light">Loading</Badge>
+            <Badge size="sm" color="light">Loading</Badge>
           ) : hasConsultationTrend ? (
-            <Badge color={consultationTrendUp ? "success" : "error"}>
+            <Badge size="sm" color={consultationTrendUp ? "success" : "error"}>
               {consultationTrendUp ? (
                 <ArrowUpIcon />
               ) : (
@@ -120,7 +120,7 @@ export const EcommerceMetrics = ({
               {formatPercent(consultationMinutesChangePct)}
             </Badge>
           ) : (
-            <Badge color="light">No trend</Badge>
+            <Badge size="sm" color="light">No trend</Badge>
           )}
         </div>
       </div>

@@ -27,7 +27,7 @@ export default function MonthlyConsultationChart({
     return (
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          <h3 className="text-lg font-semibold text-white">
             Monthly Consultations
           </h3>
         </div>
@@ -38,9 +38,9 @@ export default function MonthlyConsultationChart({
     );
   }
   const options: ApexOptions = {
-    colors: ["#465fff"],
+    colors: ["#0059ff"],
     chart: {
-      fontFamily: "Outfit, sans-serif",
+      // fontFamily: "Outfit, sans-serif",
       type: "bar",
       height: 180,
       toolbar: {
@@ -84,12 +84,16 @@ export default function MonthlyConsultationChart({
       axisTicks: {
         show: false,
       },
+      labels: {
+        style: {
+          colors: "#FFFFFF",
+        },
+      },
     },
     legend: {
       show: true,
       position: "top",
       horizontalAlign: "left",
-      fontFamily: "Outfit",
     },
     yaxis: {
       title: {
@@ -140,15 +144,20 @@ export default function MonthlyConsultationChart({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
+    <div className="overflow-hidden rounded-lg border border-cultured bg-card px-5 pt-5 sm:px-6 sm:pt-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Monthly Consultations
-        </h3>
+        <div>
+          <h3 className="text-lg font-semibold text-white">
+            Monthly Consultations
+          </h3>
+          <p className="mt-1 font-semibold text-accent text-theme-sm">
+            Your monthly total consultation
+          </p>
+        </div>
 
         <div className="relative inline-block">
           <button onClick={toggleDropdown} className="dropdown-toggle">
-            <DotsThreeOutlineVerticalIcon weight="fill" className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
+            <DotsThreeOutlineVerticalIcon weight="bold" className="text-accent hover:text-white" />
           </button>
           <Dropdown
             isOpen={isOpen}
@@ -186,4 +195,3 @@ export default function MonthlyConsultationChart({
     </div>
   );
 }
-

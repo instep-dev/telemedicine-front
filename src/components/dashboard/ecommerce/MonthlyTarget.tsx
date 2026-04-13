@@ -40,11 +40,11 @@ export default function MonthlyTarget({
 }: MonthlyTargetProps) {
   if (error) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+      <div className="rounded-lg border border-cultured bg-card p-6">
+        <h3 className="text-lg font-semibold text-white">
           Monthly Target
         </h3>
-        <p className="mt-1 font-normal text-gray-500 text-theme-sm dark:text-gray-400">
+        <p className="mt-1 font-normal text-accent text-theme-sm dark:text-gray-400">
           Target you've set for each month
         </p>
         <div className="mt-4">
@@ -144,22 +144,22 @@ export default function MonthlyTarget({
     : `${todayCalls} call${todayCalls === 1 ? "" : "s"}`;
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03]">
-      <div className="px-5 pt-5 bg-white shadow-default rounded-2xl pb-11 dark:bg-gray-900 sm:px-6 sm:pt-6">
+    <div className="rounded-lg border border-cultured bg-gradient-gray w-full">
+      <div className="px-5 pt-5 shadow-default rounded-lg pb-6 bg-card sm:px-6 sm:pt-6">
         <div className="flex justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            <h3 className="text-lg font-semibold text-white">
               Monthly Target
             </h3>
-            <p className="mt-1 font-normal text-gray-500 text-theme-sm dark:text-gray-400">
-              Target you've set for each month
+            <p className="mt-1 font-semibold text-accent text-theme-sm">
+              Target we've set for you each month
             </p>
           </div>
           <div className="relative inline-block">
             <button onClick={toggleDropdown} className="dropdown-toggle">
               <DotsThreeOutlineVerticalIcon
                 weight="fill"
-                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                className="text-accent hover:text-white"
               />
             </button>
             <Dropdown
@@ -186,17 +186,17 @@ export default function MonthlyTarget({
             </Dropdown>
           </div>
         </div>
-        <div className="relative ">
-          <div className="max-h-[330px]">
+        <div className="relative">
+          <div className="max-h-[400px]">
             <ReactApexChart
               options={options}
               series={series}
               type="radialBar"
-              height={330}
+              height={400}
             />
           </div>
 
-          <div className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%]">
+          <div className="absolute left-1/2 -bottom-12 -translate-x-1/2 -translate-y-[95%]">
             <Badge
               color={
                 loading
@@ -213,13 +213,13 @@ export default function MonthlyTarget({
             </Badge>
           </div>
         </div>
-        <p className="mx-auto mt-10 w-full max-w-[250px] text-center text-sm text-gray-500 sm:text-base">
+        <p className="mx-auto mt-10 w-full max-w-[250px] text-center text-sm text-white sm:text-base">
           {loading ? (
             "Loading consultations..."
           ) : (
             <>
               You did{" "}
-              <span className="font-medium text-black">{todayCalls}</span>{" "}
+              <s className="font-medium text-blue-500">{todayCalls}</s>{" "}
               consultation{todayCalls >= 2 ? "s" : ""} today, {todayCalls === 0 ? "Try to start the consultation" : "Keep up the good work!"}
             </>
           )}
@@ -233,7 +233,7 @@ export default function MonthlyTarget({
           </p>
           <div className="flex items-center justify-center gap-1.5 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
             {targetLabel}
-            <SealCheckIcon className="text-success-300 text-sm mt-0.5" weight="fill"/>
+            <SealCheckIcon className="text-blue-500 text-sm mt-0.5" weight="fill"/>
           </div>
         </div>
 
