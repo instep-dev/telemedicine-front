@@ -168,22 +168,22 @@ type TaskCardProps = {
 
 const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
   const bucket = getStatusBucket(task.aiStatus);
-  const summaryText = trimText(task.summary, 70);
-  const aiErrorText = trimText(task.aiError, 70)
+  const summaryText = trimText(task.summary, 40);
+  const aiErrorText = trimText(task.aiError, 40)
 
   const badgeTone =
     bucket === "success"
-      ? "bg-green-50 text-green-600 border border-green-200"
+      ? "bg-green-500/10 text-green-600 border border-green-900"
       : bucket === "failed"
-        ? "bg-red-50 text-red-600 border border-red-200"
-        : "bg-yellow-50 text-yellow-600 border border-yellow-200";
+        ? "bg-red-500/10 text-red-600 border border-red-950"
+        : "bg-yellow-500/10 text-yellow-600 border border-yellow-900";
 
   const avatarTone =
     bucket === "success"
-      ? "bg-green-50 text-green-600 border border-green-200"
+      ? "bg-green-500/10 text-green-600 border border-green-900"
       : bucket === "failed"
-        ? "bg-red-100 text-red-700 border border-red-200"
-        : "bg-yellow-100 text-yellow-700 border border-yellow-200";
+        ? "bg-red-500/10 text-red-600 border border-red-950"
+        : "bg-yellow-500/10 text-yellow-600 border border-yellow-900";
 
   const stageLabel = getStageLabel(task.aiStatus);
   const estimateText = getEstimatedTimeText(
@@ -193,17 +193,17 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
   );
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs">
+    <div className="rounded-lg border border-cultured bg-card p-6 shadow-theme-xs hover:scale-102 transition-all duration-300 hover:opacity-70 cursor-pointer">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-black flex items-center gap-1">
-            <UserIcon weight="fill" className="text-gray-300"/>
+          <div className="truncate text-sm font-medium text-white flex items-center gap-1">
+            <UserIcon weight="fill" className="text-neutral-500"/>
             <p>{task.patientName || "-"} </p>
           </div>
-          <div className=" line-clamp-2 text-xs text-gray-500 flex items-center gap-1">
-            {task.roomName || task.patientIdentity || "Untitled Summary"}
+          <div className=" line-clamp-2 text-xs text-neutral-500 flex items-center gap-1">
+            {task.roomName || task.patientIdentity || "-"}
           </div>
-          <p className="mt-1 line-clamp-2 text-xs text-gray-500">
+          <p className="mt-1 line-clamp-2 text-xs ">
             {bucketStatus(bucket, summaryText)}
           </p>
         </div>
@@ -215,32 +215,32 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
         </div>
       </div>
 
-      <div className="mt-4 rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
-        <p className="text-sm font-medium text-black">
+      <div className="mt-6 rounded-md border border-cultured bg-gradient-to-b from-neutral-900 to-[#1e1e1f] p-4">
+        <p className="text-sm font-medium text-white">
           {stageLabel}
         </p>
         {bucket === "success" && (
-          <div className="mt-2 flex gap-x-2">
-            <div className="w-6 h-5 rounded-full flex items-center justify-center bg-green-100">
-              <CheckIcon className="text-[10px] text-green-800" weight="bold"/>
+          <div className="mt-2 flex gap-x-2 items-center">
+            <div className="w-4 h-4 rounded-full flex items-center justify-center bg-green-500/10 border border-green-900">
+              <CheckIcon className="text-[10px] text-green-600" weight="bold"/>
             </div>
-            <p className="text-xs text-green-500">
+            <p className="text-xs text-green-600">
               {summaryText}
             </p>
           </div>
         )}
         {bucket === "in-progress" && (
-          <div className="mt-2 text-xs text-gray-500 flex items-center gap-x-1">
-            <div className="w-4 h-4 rounded-full flex items-center justify-center bg-yellow-50">
-              <CircleNotchIcon className="text-[11px] text-yellow-600 animate-spin" weight="bold"/>
+          <div className="mt-2 text-xs text-neutral-500 flex items-center gap-x-2">
+            <div className="w-4 h-4 rounded-full flex items-center justify-center bg-yellow-500/10 border border-yellow-900">
+              <CircleNotchIcon className="text-xs text-yellow-600 animate-spin" weight="bold"/>
             </div>
             {estimateText}
           </div>
         )}
         {bucket === "failed" && task.aiError && (
-          <div className="mt-2 flex gap-x-2">
-            <div className="w-6 h-5 rounded-full flex items-center justify-center bg-red-100">
-              <SealWarningIcon className="text-[10px] text-red-600" weight="bold"/>
+          <div className="mt-2 flex gap-x-2 flex items-center">
+            <div className="w-4 h-4 rounded-full flex items-center justify-center bg-red-500/10 border border-red-950">
+              <SealWarningIcon className="text-xs text-red-600" weight="bold"/>
             </div>
             <p className="text-xs text-red-500">
               {aiErrorText}
@@ -249,13 +249,13 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+      <div className="mt-6 flex  items-center justify-between text-xs text-neutral-500 ">
         <span className="flex items-center gap-1">
           <CalendarCheckIcon weight="bold"/>
           {formatDate(task.createdAt)}
         </span>
         
-        <div className="w-1 h-1 bg-gray-400/70 rounded-full"/>
+        <div className="w-1 h-1 bg-neutral-500 rounded-full"/>
 
         <span className="flex items-center gap-1">
           <ClockUserIcon weight="bold"/>
@@ -265,7 +265,7 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <span
-          className={`inline-flex uppercase items-center rounded-lg px-3 py-1 text-xs font-medium ${badgeTone}`}
+          className={`inline-flex uppercase items-center rounded-md px-3 py-1 text-xs font-medium ${badgeTone}`}
         >
           {getLabel(task.aiStatus || "unknown")}
         </span>
@@ -286,15 +286,15 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
               {isRetrying ? "Retrying..." : "Retry"}
             </Button>
           )}
-          <Link
+          {/* <Link
             href={`/dashboard/ai-summary/${task.id}`}
-            className="text-xs font-medium text-brand-600 hover:text-brand-700"
+            className="text-xs font-medium text-white"
           >
-            <div className="px-3 py-2 gap-x-1 flex items-center rounded-2xl justify-center bg-blue-50 border border-blue-200">
+            <div className=" gap-x-1 flex items-center rounded-md px-3 py-2 text-xs font-medium justify-center bg-gradient-primary">
               Details
-              <ArrowUpRightIcon className="text-sm text-primary" weight="bold"/>
+              <ArrowUpRightIcon className="text-sm text-white" weight="bold"/>
             </div>
-          </Link>
+          </Link> */}
         </div>
       </div>
     </div>
@@ -408,21 +408,21 @@ export default function AiSummary() {
       key: "in-progress",
       title: "In Progress",
       count: grouped.inProgress.length,
-      tone: "bg-yellow-50 text-yellow-600",
+      tone: "bg-yellow-500/10 text-yellow-600 border border-yellow-900",
       tasks: grouped.inProgress,
     },
     {
       key: "success",
       title: "Success",
       count: grouped.success.length,
-      tone: "bg-green-50 text-green-600",
+      tone: "bg-green-500/10 text-green-600 border border-green-900",
       tasks: grouped.success,
     },
     {
       key: "failed",
       title: "Failed",
       count: grouped.failed.length,
-      tone: "bg-red-50 text-red-600",
+      tone: "bg-red-500/10 text-red-600 border border-red-950",
       tasks: grouped.failed,
     },
   ].filter((column) => activeFilter === "all" || activeFilter === column.key);
@@ -435,9 +435,9 @@ export default function AiSummary() {
 
   return (
     <main>
-      <PageBreadcrumb pageTitle="AI Summary" />
+      {/* <PageBreadcrumb pageTitle="AI Summary" /> */}
 
-      <div className="rounded-xl border border-gray-200 bg-white">
+      <div className="rounded-lg border border-cultured bg-card min-h-screen">
         
         <div className="gap-4 p-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="relative w-full md:max-w-xs mb-6">
@@ -453,13 +453,13 @@ export default function AiSummary() {
           </div>
           
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="inline-flex w-full flex-wrap items-center gap-2 rounded-lg bg-[#f2f4f7] p-0.5 text-sm lg:w-auto">
+            <div className="inline-flex w-full flex-wrap items-center gap-2 rounded-lg bg-card border border-cultured p-0.5 text-sm lg:w-auto">
               {filterData.map((item, i) => {
                 const color = [
-                  "bg-brand-50 text-primary",
-                  "bg-green-50 text-green-600",
-                  "bg-yellow-50 text-yellow-600",
-                  "bg-red-50 text-red-600",
+                  "bg-brand-500/10 text-white border border-brand-900",
+                  "bg-green-500/10 text-green-600 border border-green-900",
+                  "bg-yellow-500/10 text-yellow-600 border border-yellow-900",
+                  "bg-red-500/10 text-red-600 border border-red-950",
                 ];
 
                 const isActive = activeFilter === item.value;
@@ -468,16 +468,16 @@ export default function AiSummary() {
                   <button
                     key={item.value}
                     onClick={() => setActiveFilter(item.value)}
-                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-all duration-200 ${
                       isActive
-                        ? "border-gray-200 bg-white text-gray-900 shadow-theme-xs"
-                        : "border-transparent text-gray-600 hover:text-gray-800"
+                        ? "bg-gradient-gray text-white shadow-theme-xs"
+                        : "text-accent"
                     }`}
                   >
                     <span>{item.title}</span>
                     <span
                       className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        isActive ? color[i] : "bg-gray-200 text-gray-700"
+                        isActive ? color[i] : "" 
                       }`}
                     >
                       {item.count}
@@ -499,7 +499,7 @@ export default function AiSummary() {
           </div>
           
         {grouped.inProgress.length > 0 && (
-          <div className="mx-6 mb-0 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700 flex items-center gap-x-2 mb-6">
+          <div className="mx-6 mb-0 rounded-lg border border-yellow-900 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-600 flex items-center gap-x-2 mb-6">
             <div className="w-4 h-4 flex items-center justify-center">
               <InfoIcon className="text-base "/>
             </div>
@@ -524,12 +524,12 @@ export default function AiSummary() {
         ) : (
           <>
             {isAllView ? (
-              <div className="grid gap-6 border-t border-gray-100 p-6 lg:grid-cols-3">
+              <div className="grid gap-6 border-t border-cultured p-6 lg:grid-cols-3">
                 {kanbanColumns.map((column) => (
                   <div key={column.key} className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-sm font-semibold text-gray-900">
+                        <h3 className="text-sm font-semibold text-white">
                           {column.title}
                         </h3>
                         <span
@@ -539,7 +539,7 @@ export default function AiSummary() {
                         </span>
                       </div>
 
-                      <button className="rounded-full px-2 text-gray-400 hover:text-gray-600">
+                      <button className="rounded-full px-2 text-accent hover:text-white">
                         ...
                       </button>
                     </div>
@@ -566,12 +566,12 @@ export default function AiSummary() {
                 ))}
               </div>
             ) : (
-              <div className="border-t border-gray-100 p-6">
+              <div className="border-t border-cultured p-6">
                 {singleColumn && (
                   <>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-sm font-semibold text-gray-900">
+                        <h3 className="text-sm font-semibold text-white">
                           {singleColumn.title}
                         </h3>
                         <span
@@ -598,7 +598,7 @@ export default function AiSummary() {
             )}
 
             {data?.pagination?.hasMore && (
-              <div className="border-t border-gray-100 p-6">
+              <div className="border-t border-cultured p-6">
                 <Button
                   variant="outline"
                   disabled={isFetching || !data.pagination.nextCursor}

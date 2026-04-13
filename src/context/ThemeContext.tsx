@@ -12,16 +12,34 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const applyThemeToTargets = (theme: Theme) => {
+  const targets = Array.from(document.querySelectorAll<HTMLElement>(".dashboard-theme"));
+  const apply = (el: HTMLElement) => {
+    if (theme === "dark") {
+      el.classList.add("dark");
+    } else {
+      el.classList.remove("dark");
+    }
+  };
+
+  if (targets.length) {
+    targets.forEach(apply);
+    return;
+  }
+
+  apply(document.documentElement);
+};
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     // This code will only run on the client side
     const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const initialTheme = savedTheme || "light"; // Default to light theme
+    const initialTheme = savedTheme || "dark"; // Default to dark theme for dashboard
 
     setTheme(initialTheme);
     setIsInitialized(true);
@@ -30,11 +48,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (isInitialized) {
       localStorage.setItem("theme", theme);
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+      applyThemeToTargets(theme);
     }
   }, [theme, isInitialized]);
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Instrument_Serif, Inter } from "next/font/google";
+import "flatpickr/dist/flatpickr.css";
 import "../styles/globals.css";
 import Providers from "@/providers/Providers";
 import SmoothScroll from "@/animations/SmoothScroll";

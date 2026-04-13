@@ -165,7 +165,7 @@ export default function StatisticsChart({ accessToken }: StatisticsChartProps) {
       position: "top",
       horizontalAlign: "left",
     },
-    colors: ["#465FFF", "#9CB9FF"], // Define line colors
+    colors: ["#0059ff", "#8ebbff"], // Define line colors
     chart: {
       fontFamily: "Outfit, sans-serif",
       height: 310,
@@ -270,22 +270,22 @@ export default function StatisticsChart({ accessToken }: StatisticsChartProps) {
     },
   ];
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
+    <div className="rounded-lg border border-cultured bg-card px-5 pb-5 pt-5  sm:px-6 sm:pt-6">
       <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
         <div className="w-full">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
             Statistics consultations
           </h3>
-          <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
+          <p className="mt-1 text-accent text-theme-sm">
             Daily calls and consultation hours
           </p>
         </div>
-        <div className="flex items-center gap-3 sm:justify-end">
+        <div className="flex items-center sm:justify-end">
           <div className="relative inline-flex items-center">
-            <CalendarIcon className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:left-3 lg:top-1/2 lg:translate-x-0 lg:-translate-y-1/2  text-gray-500 dark:text-gray-400 pointer-events-none z-10" />
+            <CalendarIcon weight="duotone" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:left-3 lg:top-1/2 lg:translate-x-0 lg:-translate-y-1/2 text-white pointer-events-none z-10" />
             <input
               ref={datePickerRef}
-              className="h-10 w-10 lg:w-40 lg:h-auto  lg:pl-10 lg:pr-3 lg:py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-transparent lg:text-gray-700 outline-none dark:border-gray-700 dark:bg-gray-800 dark:lg:text-gray-300 cursor-pointer"
+              className="h-10 w-10 lg:w-40 lg:h-auto lg:pl-10 lg:pr-3 lg:py-2 rounded-md border border-cultured bg-gradient-gray text-white text-sm font-semibold text-transparent outline-none cursor-pointer"
               placeholder="Select date range"
             />
           </div>
