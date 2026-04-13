@@ -8,9 +8,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <ThemeProvider>
-      <SidebarProvider>
-        <AdminLayout>{children}</AdminLayout>
-      </SidebarProvider>
+      {/* <div className="dashboard-theme dark" data-theme-mode="dark" data-theme-preset="default"> */}
+        <SidebarProvider>
+          <AdminLayout>{children}</AdminLayout>
+        </SidebarProvider>
+      {/* </div> */}
     </ThemeProvider>
   )
 }

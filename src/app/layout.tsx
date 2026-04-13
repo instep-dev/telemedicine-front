@@ -40,7 +40,7 @@ export default function RootLayout({
       lang="en"
       className={cn(jetbrainsMono.variable, inter.variable, instrumentSerif.variable)}
     >
-      <body className="font-inter antialiased bg-backgr">
+      <body className="font-inter antialiased bg-background">
         <SmoothScroll>
           <Providers>
             {children}

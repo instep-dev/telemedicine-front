@@ -3,9 +3,9 @@
 import React from "react";
 
 import { useSidebar } from "@/context/SidebarContext";
-import AppHeader from "@/layout/AppHeader";
-import AppSidebar from "@/layout/AppSidebar";
-import Backdrop from "@/layout/Backdrop";
+import AppHeader from "@/components/dashboard/header/AppHeader";
+import AppSidebar from "@/components/dashboard/header/AppSidebar";
+import Backdrop from "@/components/dashboard/header/Backdrop";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();

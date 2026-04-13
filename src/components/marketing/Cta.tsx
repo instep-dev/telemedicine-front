@@ -25,7 +25,7 @@ const Cta = () => {
           Sign up with HealthJoy and connect instantly with doctors, reports, and wellness support.
         </p>
         <div className="flex items-center justify-center mt-6">
-          <Btn value={`Jump To Call`} variant='primary'/>
+          {/* <Btn value={`Jump To Call`} variant='primary'/> */}
         </div>
         <div className=" mt-20 h-[500px] grid grid-cols-3 gap-6 relative">
           <div className="bottom-0 bg-gradient-to-t from-background via-transparent to-transparent flex items-end justify-center absolute left-0 right-0 z-20 h-full">

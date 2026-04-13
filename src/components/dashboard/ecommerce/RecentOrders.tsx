@@ -46,8 +46,7 @@ const formatDate = (date?: string | null) => {
 
   return (
     <div className="flex flex-col leading-tight">
-      <span>{datePart}</span>
-      <span className="text-xs text-gray-400">{timePart}</span>
+      <span className="text-sm">{datePart} - {timePart}</span>
     </div>
   );
 };
@@ -90,22 +89,25 @@ export default function RecentConsultations({
 }: RecentConsultationsProps) {
   const safeRows = Array.isArray(rows) ? rows : [];
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
+    <div className="overflow-hidden rounded-lg border border-cultured bg-card px-4 pb-3 pt-4 sm:px-6">
       <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          <h3 className="text-lg font-semibold text-white">
             Recent Consultations
           </h3>
+          <p className="mt-1 font-semibold text-accent text-theme-sm">
+            5 last consultations
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200">
+        <div className="flex items-center gap-4">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-cultured bg-gradient-gray px-4 py-2.5 text-theme-sm font-medium text-white shadow-theme-xs hover:bg-gray-50 hover:hover:opacity-70 transition-all duration-300">
             <FadersHorizontalIcon />
             Filter
           </button>
           <Link
             href={`/history`}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+            className="inline-flex items-center gap-2 rounded-lg border border-cultured bg-gradient-gray px-4 py-2.5 text-theme-sm font-medium text-white shadow-theme-xs hover:bg-gray-50 hover:hover:opacity-70 transition-all duration-300"
           >
             <CardsIcon />
             See all
@@ -115,29 +117,29 @@ export default function RecentConsultations({
       <div className="max-w-full overflow-x-auto">
         <Table className="table-fixed">
           {/* Table Header */}
-          <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
+          <TableHeader className="border-cultured border-y">
             <TableRow>
               <TableCell
                 isHeader
-                className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 w-[40%]"
+                className="py-3 font-medium text-white text-start text-theme-xs w-[30%]"
               >
                 Consultations
               </TableCell>
               <TableCell
                 isHeader
-                className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 w-[25%]"
+                className="py-3 font-medium text-white text-start text-theme-xs w-[25%]"
               >
                 Patients
               </TableCell>
               <TableCell
                 isHeader
-                className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 w-[20%]"
+                className="py-3 font-medium text-white text-start text-theme-xs w-[30%]"
               >
                 Date
               </TableCell>
               <TableCell
                 isHeader
-                className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 w-[15%]"
+                className="py-3 font-medium text-white text-start text-theme-xs w-[15%]"
               >
                 Status
               </TableCell>
@@ -154,9 +156,9 @@ export default function RecentConsultations({
                 <TableRow key={item.id} className="align-top">
                   <TableCell className="py-4 align-top">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-x-2">
+                      <div className="flex items-center gap-x-1">
                         <p
-                          className="font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate"
+                          className="font-medium text-white text-theme-sm truncate"
                           title={doctorName}
                         >
                           {trimText(doctorName, 32)}
@@ -164,22 +166,22 @@ export default function RecentConsultations({
                         <SealCheckIcon className="text-xs text-success-400" weight="fill"/>
                       </div>
                       <span
-                        className="block text-gray-500 text-theme-xs dark:text-gray-400 truncate"
+                        className="block text-accent text-theme-xs truncate"
                         title={consultationName}
                       >
                         {trimText(consultationName, 22)}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="py-4 text-gray-500 text-theme-sm dark:text-gray-400 align-top">
+                  <TableCell className="py-4 text-white text-sm align-top">
                     <span className="block truncate" title={patientName}>
                       {trimText(patientName, 20)}
                     </span>
                   </TableCell>
-                  <TableCell className="py-4 text-gray-500 text-theme-sm dark:text-gray-400 align-top whitespace-nowrap">
+                  <TableCell className="py-4 text-white text-sm align-top whitespace-nowrap">
                     {formatDate(item.startedAt ?? item.consultationStartedAt ?? item.createdAt)}
                   </TableCell>
-                  <TableCell className="py-4 text-gray-500 text-theme-sm dark:text-gray-400 align-top whitespace-nowrap">
+                  <TableCell className="py-4 text-white text-sm align-top whitespace-nowrap">
                     <Badge size="sm" color={getStatusColor(item.status)}>
                       {getStatusLabel(item.status)}
                     </Badge>
