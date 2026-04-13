@@ -398,7 +398,7 @@ class Media {
       texture.image = canvas;
       this.program.uniforms.uImageSizes.value = [width, height];
     } else {
-      const img = new Image();
+      const img = new window.Image();
       img.crossOrigin = 'anonymous';
       img.src = this.image ?? '';
       img.onload = () => {
