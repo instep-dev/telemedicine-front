@@ -1,7 +1,7 @@
 "use client";
 
-import LoginForm from "@/components/auth/LoginForm";
-import { Suspense, useMemo, useState } from "react";
+import RegistrationForm from "@/components/auth/RegistrationForm";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { UserRole } from "@/services/auth/auth.dto";
 
@@ -11,7 +11,7 @@ const roles: { label: string; value: UserRole }[] = [
   { label: "Patient", value: "PATIENT" },
 ];
 
-export default function LoginPage() {
+export default function RegistrationPage() {
   const params = useSearchParams();
   const initialRole = useMemo(() => {
     const roleParam = (params.get("role") || "").toUpperCase();
@@ -22,7 +22,7 @@ export default function LoginPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl mb-4">Login</h1>
+      <h1 className="text-xl mb-4">Registrasi</h1>
       <div className="flex gap-2 mb-4">
         {roles.map((r) => (
           <button
@@ -37,9 +37,7 @@ export default function LoginPage() {
           </button>
         ))}
       </div>
-      <Suspense fallback={<div>Loading...</div>}>
-        <LoginForm role={role} />
-      </Suspense>
+      <RegistrationForm role={role} />
     </div>
   );
 }

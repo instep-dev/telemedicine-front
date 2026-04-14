@@ -8,11 +8,11 @@ export const useLoginMutation = () => {
     onSuccess: (data) => {
       authStore.getState().setAuth({
         accessToken: data.accessToken,
-        doctor: data.doctor,
+        user: data.user,
       });
     },
   });
-}
+};
 
 export const useLogoutMutation = () => {
   return useMutation({
@@ -21,7 +21,31 @@ export const useLogoutMutation = () => {
       authStore.getState().clear();
     },
   });
-}
+};
+
+export const useRegisterMutation = () => {
+  return useMutation({
+    mutationFn: authApi.register,
+  });
+};
+
+export const useVerifyEmailMutation = () => {
+  return useMutation({
+    mutationFn: authApi.verifyEmail,
+  });
+};
+
+export const useOAuthCompleteMutation = () => {
+  return useMutation({
+    mutationFn: authApi.oauthComplete,
+    onSuccess: (data) => {
+      authStore.getState().setAuth({
+        accessToken: data.accessToken,
+        user: data.user,
+      });
+    },
+  });
+};
 
 /**
  * Jalan sekali saat app load.
@@ -30,12 +54,12 @@ export const useLogoutMutation = () => {
  */
 export const bootstrapAuth = async () => {
   try {
-    const { accessToken, doctor } = await authApi.refresh();
-    authStore.getState().setAuth({ accessToken, doctor });
+    const { accessToken, user } = await authApi.refresh();
+    authStore.getState().setAuth({ accessToken, user });
   } catch (err: any) {
     // 401 = belum login => normal, cukup clear
     authStore.getState().clear();
   } finally {
     authStore.getState().setBootstrapped(true);
   }
-}
+};

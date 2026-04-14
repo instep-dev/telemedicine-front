@@ -17,17 +17,17 @@ const navItems: NavItem[] = [
   {
     icon: <GridFourIcon size={22}/>,
     name: "Dashboard",
-    path: "/dashboard",
+    path: "/doctor/dashboard",
   },
   {
     name: "Consultations History",
     icon: <TableIcon size={22}/>,
-    path: "/history",
+    path: "/doctor/history",
   },
    {
     name: "AI Summary",
     icon: <RobotIcon size={22}/>,
-    path: "/ai-summary",
+    path: "/doctor/ai-summary",
   },
 ];
 

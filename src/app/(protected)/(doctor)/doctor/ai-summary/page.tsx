@@ -499,7 +499,7 @@ export default function AiSummary() {
           </div>
           
         {grouped.inProgress.length > 0 && (
-          <div className="mx-6 mb-0 rounded-lg border border-yellow-900 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-600 flex items-center gap-x-2 mb-6">
+          <div className="mx-6 mb-0 rounded-lg border border-yellow-900 bg-gradient-to-r from-yellow-500/10 to-bg-card  px-4 py-3 text-sm text-yellow-600 flex items-center gap-x-2 mb-6">
             <div className="w-4 h-4 flex items-center justify-center">
               <InfoIcon className="text-base "/>
             </div>

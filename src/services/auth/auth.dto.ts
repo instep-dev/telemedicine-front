@@ -1,20 +1,54 @@
+export type UserRole = "DOCTOR" | "ADMIN" | "PATIENT";
+
 export type LoginDto = {
-  email: string;
+  identifier: string; // email atau phone
   password: string;
 };
 
-export type DoctorDto = {
+export type RegisterDto = {
+  role: UserRole;
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  license?: string;
+  adminId?: string;
+  bornDate?: string;
+};
+
+export type VerifyEmailDto = {
+  token: string;
+};
+
+export type OAuthCompleteDto = {
+  token: string;
+  phone: string;
+  name?: string;
+  bornDate?: string;
+  license?: string;
+  adminId?: string;
+};
+
+export type UserDto = {
   id: string;
   email: string;
-  name?: string;
+  name: string;
+  role: UserRole;
+  phone: string;
+  twilioIdentity?: string | null;
 };
 
 export type LoginResponseDto = {
   accessToken: string;
-  doctor: DoctorDto;
+  user: UserDto;
 };
 
 export type RefreshResponseDto = {
   accessToken: string;
-  doctor?: DoctorDto;
+  user?: UserDto;
+};
+
+export type BasicOkResponse = {
+  ok: boolean;
 };
