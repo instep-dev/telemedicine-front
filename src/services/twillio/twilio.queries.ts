@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { twilioApi } from "./twilio.api";
-import type { DoctorTokenBody, GuestTokenBody } from "./twilio.dto";
+import type { DoctorTokenBody, PatientTokenBody } from "./twilio.dto";
 
 export function useDoctorTokenMutation(accessToken: string | null) {
   return useMutation({
@@ -11,17 +11,21 @@ export function useDoctorTokenMutation(accessToken: string | null) {
   });
 }
 
-export function useGuestTokenMutation() {
+export function usePatientTokenMutation(accessToken: string | null) {
   return useMutation({
-    mutationFn: (body: GuestTokenBody) => twilioApi.getGuestToken(body),
+    mutationFn: (body: PatientTokenBody) => {
+      if (!accessToken) throw new Error("No access token");
+      return twilioApi.getPatientToken(accessToken, body);
+    },
   });
 }
 
 export function useEndCallMutation(accessToken: string | null) {
   return useMutation({
-    mutationFn: (consultationId: string) => {
+    mutationFn: (sessionId: string) => {
       if (!accessToken) throw new Error("No access token");
-      return twilioApi.endCall(accessToken, consultationId);
+      return twilioApi.endCall(accessToken, sessionId);
     },
   });
 }
+

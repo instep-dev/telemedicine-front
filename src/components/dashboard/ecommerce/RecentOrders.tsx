@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,6 +11,8 @@ import {
 import Badge from "../ui/badge/Badge";
 import {
   CardsIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
   CircleNotchIcon,
   EmptyIcon,
   FadersHorizontalIcon,
@@ -25,7 +28,13 @@ type RecentConsultationsProps = {
   rows: CallItemDto[];
   loading?: boolean;
   error?: boolean;
+  seeAllHref?: string;
+  subtitle?: string;
+  enableCursorPagination?: boolean;
+  pageSize?: number;
 };
+
+const DEFAULT_PAGE_SIZE = 10;
 
 const formatDate = (date?: string | null) => {
   if (!date) return "-";
@@ -82,12 +91,69 @@ const formatPatientName = (item: CallItemDto) => {
   return item.patientName ?? item.patientIdentity ?? "-";
 };
 
+const findCursorStartIndex = (rows: CallItemDto[], cursor: string | null) => {
+  if (!cursor) return 0;
+  const cursorIndex = rows.findIndex((item) => item.id === cursor);
+  if (cursorIndex === -1) return 0;
+  return cursorIndex + 1;
+};
+
 export default function RecentConsultations({
   rows,
   loading = false,
   error = false,
+  seeAllHref = "/history",
+  subtitle = "5 last consultations",
+  enableCursorPagination = false,
+  pageSize = DEFAULT_PAGE_SIZE,
 }: RecentConsultationsProps) {
-  const safeRows = Array.isArray(rows) ? rows : [];
+  const safeRows = useMemo(() => (Array.isArray(rows) ? rows : []), [rows]);
+  const normalizedPageSize = Math.max(1, pageSize);
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const validIds = useMemo(() => new Set(safeRows.map((item) => item.id)), [safeRows]);
+  const resolvedCursorHistory = useMemo(() => {
+    const normalized = cursorHistory.filter((entry, index) => {
+      if (index === 0 && entry === null) return true;
+      return !!entry && validIds.has(entry);
+    });
+
+    return normalized.length ? normalized : [null];
+  }, [cursorHistory, validIds]);
+  const cursor = resolvedCursorHistory[resolvedCursorHistory.length - 1] ?? null;
+
+  const { visibleRows, hasNextPage } = useMemo(() => {
+    if (!enableCursorPagination) {
+      return {
+        visibleRows: safeRows,
+        hasNextPage: false,
+      };
+    }
+
+    const startIndex = findCursorStartIndex(safeRows, cursor);
+    const nextRows = safeRows.slice(startIndex, startIndex + normalizedPageSize);
+    const hasNext = startIndex + normalizedPageSize < safeRows.length;
+
+    return {
+      visibleRows: nextRows,
+      hasNextPage: hasNext,
+    };
+  }, [safeRows, enableCursorPagination, cursor, normalizedPageSize]);
+
+  const rowsToRender = enableCursorPagination ? visibleRows : safeRows;
+  const hasPrevPage = enableCursorPagination && resolvedCursorHistory.length > 1;
+
+  const handleNextPage = () => {
+    if (!enableCursorPagination || !hasNextPage || rowsToRender.length === 0) return;
+
+    const nextCursor = rowsToRender[rowsToRender.length - 1].id;
+    setCursorHistory([...resolvedCursorHistory, nextCursor]);
+  };
+
+  const handlePrevPage = () => {
+    if (!enableCursorPagination || resolvedCursorHistory.length <= 1) return;
+    setCursorHistory(resolvedCursorHistory.slice(0, -1));
+  };
+
   return (
     <div className="overflow-hidden rounded-lg border border-cultured bg-card px-4 pb-3 pt-4 sm:px-6">
       <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -96,7 +162,7 @@ export default function RecentConsultations({
             Recent Consultations
           </h3>
           <p className="mt-1 font-semibold text-accent text-theme-sm">
-            5 last consultations
+            {subtitle}
           </p>
         </div>
 
@@ -106,7 +172,7 @@ export default function RecentConsultations({
             Filter
           </button>
           <Link
-            href={`/history`}
+            href={seeAllHref}
             className="inline-flex items-center gap-2 rounded-lg border border-cultured bg-gradient-gray px-4 py-2.5 text-theme-sm font-medium text-white shadow-theme-xs hover:bg-gray-50 hover:hover:opacity-70 transition-all duration-300"
           >
             <CardsIcon />
@@ -116,7 +182,6 @@ export default function RecentConsultations({
       </div>
       <div className="max-w-full overflow-x-auto">
         <Table className="table-fixed">
-          {/* Table Header */}
           <TableHeader className="border-cultured border-y">
             <TableRow>
               <TableCell
@@ -146,9 +211,8 @@ export default function RecentConsultations({
             </TableRow>
           </TableHeader>
 
-          {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {safeRows.map((item) => {
+            {rowsToRender.map((item) => {
               const doctorName = item.doctorName ?? "-";
               const consultationName = formatConsultationName(item);
               const patientName = formatPatientName(item);
@@ -163,7 +227,7 @@ export default function RecentConsultations({
                         >
                           {trimText(doctorName, 32)}
                         </p>
-                        <SealCheckIcon className="text-xs text-success-400" weight="fill"/>
+                        <SealCheckIcon className="text-xs text-success-400" weight="fill" />
                       </div>
                       <span
                         className="block text-accent text-theme-xs truncate"
@@ -192,6 +256,30 @@ export default function RecentConsultations({
           </TableBody>
         </Table>
       </div>
+
+      {enableCursorPagination && !loading && !error && rowsToRender.length > 0 ? (
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handlePrevPage}
+            disabled={!hasPrevPage}
+            className="inline-flex items-center gap-1 rounded-md border border-cultured px-3 py-2 text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <CaretLeftIcon size={14} />
+            Prev
+          </button>
+          <button
+            type="button"
+            onClick={handleNextPage}
+            disabled={!hasNextPage}
+            className="inline-flex items-center gap-1 rounded-md border border-cultured px-3 py-2 text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+            <CaretRightIcon size={14} />
+          </button>
+        </div>
+      ) : null}
+
       {loading ? (
         <div className="">
           <DataEmpty ItemIcon={CircleNotchIcon} value="Loading" subValue="Consultations" />
@@ -200,7 +288,7 @@ export default function RecentConsultations({
         <div className="">
           <DataEmpty ItemIcon={XIcon} value="Failed to load" subValue="Consultations" />
         </div>
-      ) : safeRows.length === 0 ? (
+      ) : rowsToRender.length === 0 ? (
         <div className="">
           <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="Starts consultations" />
         </div>

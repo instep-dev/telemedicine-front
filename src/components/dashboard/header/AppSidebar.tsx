@@ -1,9 +1,20 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  CaretDownIcon,
+  GridFourIcon,
+  FirstAidIcon,
+  TableIcon,
+  DotsNineIcon,
+  RobotIcon,
+  CalendarBlankIcon,
+} from "@phosphor-icons/react";
 import { useSidebar } from "../../../context/SidebarContext";
-import { CaretDownIcon, GridFourIcon, FirstAidIcon, TableIcon, DotsNineIcon, RobotIcon } from "@phosphor-icons/react";
+import { authStore } from "@/services/auth/auth.store";
+import type { UserRole } from "@/services/auth/auth.dto";
+import { getDashboardPath } from "@/lib/route";
 import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -13,36 +24,97 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
-  {
-    icon: <GridFourIcon size={22}/>,
-    name: "Dashboard",
-    path: "/dashboard",
-  },
-  {
-    name: "Consultations History",
-    icon: <TableIcon size={22}/>,
-    path: "/history",
-  },
-   {
-    name: "AI Summary",
-    icon: <RobotIcon size={22}/>,
-    path: "/ai-summary",
-  },
-];
+const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItem[]> = {
+  DOCTOR: [
+    {
+      icon: <GridFourIcon size={22} />,
+      name: "Dashboard",
+      path: "/doctor/dashboard",
+    },
+    {
+      name: "Schedule",
+      icon: <CalendarBlankIcon size={22} />,
+      path: "/doctor/schedule",
+    },
+    {
+      name: "Consultations History",
+      icon: <TableIcon size={22} />,
+      path: "/doctor/history",
+    },
+    {
+      name: "AI Summary",
+      icon: <RobotIcon size={22} />,
+      path: "/doctor/ai-summary",
+    },
+  ],
+  ADMIN: [
+    {
+      icon: <GridFourIcon size={22} />,
+      name: "Dashboard",
+      path: "/admin/dashboard",
+    },
+    {
+      name: "Schedule",
+      icon: <CalendarBlankIcon size={22} />,
+      path: "/admin/schedule",
+    },
+  ],
+  PATIENT: [
+    {
+      icon: <GridFourIcon size={22} />,
+      name: "Dashboard",
+      path: "/patient/dashboard",
+    },
+    {
+      name: "Schedule",
+      icon: <CalendarBlankIcon size={22} />,
+      path: "/patient/schedule",
+    },
+  ],
+};
 
-const othersItems: NavItem[] = [];
+const OTHERS_ITEMS_BY_ROLE: Record<UserRole, NavItem[]> = {
+  DOCTOR: [],
+  ADMIN: [],
+  PATIENT: [],
+};
+
+const APP_TITLE_BY_ROLE: Record<UserRole, string> = {
+  DOCTOR: "Teledoctor",
+  ADMIN: "Teleadmin",
+  PATIENT: "Telepatient",
+};
+
+const useAuthSnapshot = () =>
+  useSyncExternalStore(
+    authStore.subscribe,
+    () => authStore.getState(),
+    () => authStore.getState(),
+  );
+
+const inferRoleFromPathname = (pathname: string): UserRole => {
+  if (pathname.startsWith("/admin")) return "ADMIN";
+  if (pathname.startsWith("/patient")) return "PATIENT";
+  return "DOCTOR";
+};
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const { user } = useAuthSnapshot();
+
+  const role = user?.role ?? inferRoleFromPathname(pathname);
+  const navItems = NAV_ITEMS_BY_ROLE[role];
+  const othersItems = OTHERS_ITEMS_BY_ROLE[role];
+  const appTitle = APP_TITLE_BY_ROLE[role];
+  const dashboardPath = getDashboardPath(role);
 
   const renderMenuItems = (
-    navItems: NavItem[],
+    items: NavItem[],
     menuType: "main" | "others"
   ) => (
     <ul className="flex flex-col gap-4">
-      {navItems.map((nav, index) => (
+      {items.map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
@@ -67,7 +139,7 @@ const AppSidebar: React.FC = () => {
                 {nav.icon}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
+                <span className="menu-item-text">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <CaretDownIcon
@@ -98,7 +170,7 @@ const AppSidebar: React.FC = () => {
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
+                  <span className="menu-item-text">{nav.name}</span>
                 )}
               </Link>
             )
@@ -172,36 +244,9 @@ const AppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  const isActive = useCallback((path: string) => path === pathname, [pathname]);
 
   useEffect(() => {
-    let submenuMatched = false;
-    ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
-      items.forEach((nav, index) => {
-        if (nav.subItems) {
-          nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
-                type: menuType as "main" | "others",
-                index,
-              });
-              submenuMatched = true;
-            }
-          });
-        }
-      });
-    });
-
-    // If no submenu item matches, close the open submenu
-    if (!submenuMatched) {
-      setOpenSubmenu(null);
-    }
-  }, [pathname,isActive]);
-
-  useEffect(() => {
-    // Set the height of the submenu items when the submenu is opened
     if (openSubmenu !== null) {
       const key = `${openSubmenu.type}-${openSubmenu.index}`;
       if (subMenuRefs.current[key]) {
@@ -228,7 +273,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-card text-white border-r border-cultured h-screen transition-all duration-300 ease-in-out z-50 
+      className={`fixed flex flex-col justify-between mt-16 pb-6 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-card text-white border-r border-cultured h-screen transition-all duration-300 ease-in-out z-50 
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"
@@ -241,72 +286,74 @@ const AppSidebar: React.FC = () => {
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        className={`py-8 flex  ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-        }`}
-      >
-        <Link href="/dashboard">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <div className='flex items-center gap-x-1'>
-                <div className='w-5 h-5 bg-gradient-primary rounded-full flex items-center justify-center'>
-                  <FirstAidIcon size={11} className='text-white' weight='fill'/>
+      <div>
+        <div
+          className={`py-8 flex  ${
+            !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+          }`}
+        >
+          <Link href={dashboardPath}>
+            {isExpanded || isHovered || isMobileOpen ? (
+              <>
+                <div className="flex items-center gap-x-1">
+                  <div className="w-5 h-5 bg-gradient-primary rounded-full flex items-center justify-center">
+                    <FirstAidIcon size={11} className="text-white" weight="fill" />
+                  </div>
+                  <div className="flex items-start justify-start gap-x-1">
+                    <h3 className="text-xl font-medium tracking-tight text-white">{appTitle}</h3>
+                    <p className="font-medium text-white">&reg;</p>
+                  </div>
                 </div>
-                <div className='flex items-start justify-start gap-x-1'>
-                  <h3 className='text-xl font-medium tracking-tight text-white'>Telemedicine</h3>
-                  <p className='font-medium text-white'>®</p>
-                </div>
+              </>
+            ) : (
+              <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center dark:bg-blue-400">
+                <FirstAidIcon size={11} className="text-white" weight="fill" />
               </div>
-            </>
-          ) : (
-            <div className='w-5 h-5 bg-primary rounded-full flex items-center justify-center dark:bg-blue-400'>
-              <FirstAidIcon size={11} className='text-white' weight='fill'/>
-            </div>
-          )}
-        </Link>
-      </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-accent ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <DotsNineIcon size={20} />
-                )}
-              </h2>
-              {renderMenuItems(navItems, "main")}
-            </div>
-
-            {othersItems.length ? (
-              <div className="">
+            )}
+          </Link>
+        </div>
+        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+          <nav className="mb-6">
+            <div className="flex flex-col gap-4">
+              <div>
                 <h2
-                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-accent ${
                     !isExpanded && !isHovered
                       ? "lg:justify-center"
                       : "justify-start"
                   }`}
                 >
                   {isExpanded || isHovered || isMobileOpen ? (
-                    "Others"
+                    "Menu"
                   ) : (
-                    <DotsNineIcon />
+                    <DotsNineIcon size={20} />
                   )}
                 </h2>
-                {renderMenuItems(othersItems, "others")}
+                {renderMenuItems(navItems, "main")}
               </div>
-            ) : null}
-          </div>
-        </nav>
-        <SidebarWidget/>
+
+              {othersItems.length ? (
+                <div className="">
+                  <h2
+                    className={`mb-4 text-xs uppercase flex leading-[20px] ${
+                      !isExpanded && !isHovered
+                        ? "lg:justify-center"
+                        : "justify-start"
+                    }`}
+                  >
+                    {isExpanded || isHovered || isMobileOpen ? (
+                      "Others"
+                    ) : (
+                      <DotsNineIcon />
+                    )}
+                  </h2>
+                  {renderMenuItems(othersItems, "others")}
+                </div>
+              ) : null}
+            </div>
+          </nav>
+          <SidebarWidget />
+        </div>
       </div>
     </aside>
   );

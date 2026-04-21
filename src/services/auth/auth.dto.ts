@@ -1,20 +1,106 @@
+export type UserRole = "DOCTOR" | "ADMIN" | "PATIENT";
+
 export type LoginDto = {
-  email: string;
+  identifier: string; // email atau phone
   password: string;
+  rememberMe?: boolean;
 };
 
-export type DoctorDto = {
+export type RegisterDto = {
+  role: UserRole;
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  license?: string;
+  adminId?: string;
+  bornDate?: string;
+};
+
+export type VerifyEmailDto = {
+  email: string;
+  code: string;
+};
+
+export type VerifyEmailResponseDto = {
+  ok: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: UserDto;
+};
+
+export type OAuthCompleteDto = {
+  token: string;
+  phone: string;
+  name?: string;
+  bornDate?: string;
+  license?: string;
+  adminId?: string;
+};
+
+export type UserDto = {
   id: string;
   email: string;
-  name?: string;
+  name: string;
+  role: UserRole;
+  phone: string;
+  twilioIdentity?: string | null;
 };
 
 export type LoginResponseDto = {
   accessToken: string;
-  doctor: DoctorDto;
+  user: UserDto;
 };
 
 export type RefreshResponseDto = {
   accessToken: string;
-  doctor?: DoctorDto;
+  user?: UserDto;
+};
+
+export type BasicOkResponse = {
+  ok: boolean;
+};
+
+export type DoctorProfileDto = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  license: string;
+};
+
+export type AdminProfileDto = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  adminId: string;
+};
+
+export type PatientProfileDto = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  bornDate: string;
+};
+
+export type UpdateDoctorProfileDto = {
+  fullName?: string;
+  phone?: string;
+  password?: string;
+};
+
+export type UpdateAdminProfileDto = {
+  fullName?: string;
+  phone?: string;
+  password?: string;
+};
+
+export type UpdatePatientProfileDto = {
+  fullName?: string;
+  phone?: string;
+  bornDate?: string;
+  password?: string;
 };

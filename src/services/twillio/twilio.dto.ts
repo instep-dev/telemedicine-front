@@ -1,45 +1,45 @@
 export type DoctorTokenBody = {
-  consultationId: string;
+  sessionId: string;
 };
 
-export type DoctorTokenResponse = {
-  token: string;
-  roomName: string;
-  identity: string;
-  consultationId: string;
-};
-
-export type GuestTokenBody = {
-  linkToken: string;
-  displayName: string;
+export type PatientTokenBody = {
+  sessionId: string;
   clientIp?: string | null;
 };
 
-export type GuestTokenResponse = {
+export type TokenResponse = {
   token: string;
   roomName: string;
   identity: string;
-  consultationId: string;
+  sessionId: string;
+  consultationMode: "VIDEO" | "VOICE";
+  sessionType: "SCHEDULED" | "INSTANT";
+};
+
+export type DoctorTokenResponse = TokenResponse;
+
+export type PatientTokenResponse = TokenResponse & {
   doctorName: string;
-  displayName: string;
+  patientName: string;
 };
 
 export type EndCallResponse = {
   success: boolean;
-  consultationId: string;
-  roomSid: string;
+  sessionId: string;
+  roomSid: string | null;
   status: string;
+  aiStatus?: string;
 };
 
 export type CallSessionResultResponse = {
-  consultationId: string;
-  consultationStatus: string;
-  callSession: {
-    id: string;
-    consultationId: string;
-    status: "STARTED" | "CONNECTED" | "RECORDING_READY" | "COMPLETED" | "FAILED";
-    roomSid: string | null;
-    roomName: string | null;
+  sessionId: string;
+  sessionStatus: string;
+  consultationMode: "VIDEO" | "VOICE";
+  consultationSession: {
+    sessionId: string;
+    sessionStatus: string;
+    roomName: string;
+    twilioRoomSid: string | null;
     doctorIdentity: string | null;
     patientIdentity: string | null;
     startedAt: string | null;
@@ -63,7 +63,7 @@ export type CallSessionResultResponse = {
 };
 
 export type VideoTranscriptionPayload = {
-  consultationId: string;
+  sessionId: string;
   transcription: string;
   participant?: string;
   partialResults?: boolean;
@@ -72,3 +72,4 @@ export type VideoTranscriptionPayload = {
   sequenceNumber?: number;
   timestamp?: string;
 };
+

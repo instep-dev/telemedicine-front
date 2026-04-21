@@ -111,7 +111,7 @@ const About = () => {
             <div className="min-h-[350px] border border-cultured rounded-xl bg-background xl:col-span-2 relative overflow-hidden flex items-center justify-center">
               <div className="absolute inset-0 bg-background/50 z-10"/>
               <div className="absolute inset-0">
-                <Image src={`/static/hospital1.jpg`} width={700} height={700} alt="" className="w-full h-full object-cover"/>
+                <Image src={`/static/videocall.jpg`} width={700} height={700} alt="" className="w-full h-full object-cover"/>
               </div>
               <div className="p-6 w-[300px] h-[250px] relative border border-cultured rounded-xl bg-background relative z-20">
                 graph
@@ -128,9 +128,9 @@ const About = () => {
             </div>
             <div className="min-h-[350px] min-h-[350px] border border-cultured rounded-xl bg-card xl:col-span-2 flex flex-col justify-between p-6 overflow-hidden">
               <div className="flex items-center justify-center">
-                <Image src={`/static/doctoricon.png`} width={150} height={100} className="blur-3xl -mr-24" alt=""/>
-                <Image src={`/static/doctoricon.png`} width={200} height={200} className="relative" alt=""/>
-                <Image src={`/static/doctoricon.png`} width={150} height={100} className="blur-3xl -ml-24" alt=""/>
+                <Image src={`/static/patient.png`} width={150} height={100} className="blur-3xl -mr-24" alt=""/>
+                <Image src={`/static/patient.png`} width={200} height={200} className="relative" alt=""/>
+                <Image src={`/static/patient.png`} width={150} height={100} className="blur-3xl -ml-24" alt=""/>
               </div>
               <h3 className="w-md mx-auto text-center text-2xl tracking-tight"><span className="text-accent">Achieve a 25% higher open rate</span> with customized, targeted email campaigns.</h3>
             </div>

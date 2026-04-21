@@ -41,7 +41,8 @@ function getDisplayName(item: AiStatusItem) {
 }
 
 export default function AiSummaryStatusWatcher() {
-  const { accessToken, bootstrapped } = useAuthSnapshot();
+  const { accessToken, bootstrapped, user } = useAuthSnapshot();
+  const isDoctor = user?.role === "DOCTOR";
 
   const initializedRef = useRef(false);
   const previousStatusMapRef = useRef<Record<string, string>>({});
@@ -49,7 +50,7 @@ export default function AiSummaryStatusWatcher() {
 
   const { data } = useAiResultsWatcherQuery(
     accessToken,
-    bootstrapped && !!accessToken,
+    bootstrapped && !!accessToken && isDoctor,
   );
 
   useEffect(() => {

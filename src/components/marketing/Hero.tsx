@@ -37,7 +37,7 @@ const Hero = () => {
       </div>
       <div className='absolute inset-0 z-0'>
         <Image
-          src={'/static/sketch.png'}
+          src={'/static/bg1.png'}
           alt=''
           fill
           sizes='100vw'

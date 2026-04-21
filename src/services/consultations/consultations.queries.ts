@@ -1,21 +1,75 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { consultationsApi } from "./consultations.api";
-import type { CreateConsultationBody } from "./consultations.dto";
+import type {
+  CreateConsultationSessionBody,
+  ListConsultationSessionsParams,
+} from "./consultations.dto";
 
-export function useCreateConsultationMutation(accessToken: string | null) {
+export function useCreateConsultationSessionMutation(accessToken: string | null) {
   return useMutation({
-    mutationFn: (body?: CreateConsultationBody) => {
+    mutationFn: (body: CreateConsultationSessionBody) => {
       if (!accessToken) throw new Error("No access token");
-      return consultationsApi.create(accessToken, body);
+      return consultationsApi.createSession(accessToken, body);
     },
   });
 }
 
-export function useConsultationLinkQuery(linkToken: string) {
+export function useAdminSessionsQuery(
+  accessToken: string | null,
+  params?: ListConsultationSessionsParams,
+  enabled = true,
+) {
   return useQuery({
-    queryKey: ["consultation-link", linkToken],
-    queryFn: () => consultationsApi.getByLinkToken(linkToken),
-    enabled: !!linkToken,
-    retry: false,
+    queryKey: ["consultation-sessions", "admin", params],
+    queryFn: () => {
+      if (!accessToken) throw new Error("No access token");
+      return consultationsApi.listAdminSessions(accessToken, params);
+    },
+    enabled: !!accessToken && enabled,
+  });
+}
+
+export function useAdminHistorySessionsQuery(
+  accessToken: string | null,
+  params?: ListConsultationSessionsParams,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["consultation-sessions", "admin", "history", params],
+    queryFn: () => {
+      if (!accessToken) throw new Error("No access token");
+      return consultationsApi.listAdminHistorySessions(accessToken, params);
+    },
+    enabled: !!accessToken && enabled,
+  });
+}
+
+export function useDoctorSessionsQuery(
+  accessToken: string | null,
+  params?: ListConsultationSessionsParams,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["consultation-sessions", "doctor", params],
+    queryFn: () => {
+      if (!accessToken) throw new Error("No access token");
+      return consultationsApi.listDoctorSessions(accessToken, params);
+    },
+    enabled: !!accessToken && enabled,
+  });
+}
+
+export function usePatientSessionsQuery(
+  accessToken: string | null,
+  params?: ListConsultationSessionsParams,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["consultation-sessions", "patient", params],
+    queryFn: () => {
+      if (!accessToken) throw new Error("No access token");
+      return consultationsApi.listPatientSessions(accessToken, params);
+    },
+    enabled: !!accessToken && enabled,
   });
 }

@@ -1,13 +1,26 @@
-import LoginForm from "@/components/auth/LoginForm";
+"use client";
+
 import { Suspense } from "react";
+import LoginForm from "@/components/auth/LoginForm";
+import AuthRoleLayout from "@/components/auth/AuthRoleLayout";
+
+function LoginPageContent() {
+  return (
+    <AuthRoleLayout
+      title="Login to your account"
+      subtitle="Please enter your details to login."
+      promptText="Don't have an account ?"
+      promptHrefBase="/auth/registration"
+      promptLinkLabel="Register Now"
+      renderForm={(role) => <LoginForm role={role} />}
+    />
+  );
+}
 
 export default function LoginPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-xl mb-4">Login Dokter</h1>
-      <Suspense fallback={<div>Loading...</div>}>
-        <LoginForm />
-      </Suspense>
-    </div>
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
