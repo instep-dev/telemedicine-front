@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import PageBreadcrumb from "@/components/dashboard/common/PageBreadCrumb";
+import { useRouter } from "next/navigation";
 import Button from "@/components/dashboard/ui/button/Button";
 import { ArrowClockwiseIcon, ArrowUpRightIcon, CircleNotchIcon, ClockUserIcon, InfoIcon, PlusIcon, SealWarningIcon, UserIcon, CheckIcon, XIcon, EmptyIcon } from "@phosphor-icons/react";
 import { useCreateRoom } from "@/hooks/useCreateRoom";
@@ -20,19 +19,19 @@ import Input from "@/components/dashboard/form/input/InputField";
 import { toast } from "react-toastify";
 
 // branch fix
-const CreateRoomButton = () => {
-  const { handleCreateRoom, isCreating } = useCreateRoom();
+// const CreateRoomButton = () => {
+//   const { handleCreateRoom, isCreating } = useCreateRoom();
 
-  return (
-    <Button
-      onClick={handleCreateRoom}
-      startIcon={<PlusIcon weight="bold" />}
-      disabled={isCreating}
-    >
-      {isCreating ? "Creating..." : "Create Room"}
-    </Button>
-  );
-};
+//   return (
+//     <Button
+//       onClick={handleCreateRoom}
+//       startIcon={<PlusIcon weight="bold" />}
+//       disabled={isCreating}
+//     >
+//       {isCreating ? "Creating..." : "Create Room"}
+//     </Button>
+//   );
+// };
 
 const REFRESH_INTERVAL_SEC = Math.max(1, Math.ceil(AI_RESULTS_REFETCH_INTERVAL_MS / 1000));
 
@@ -164,9 +163,10 @@ type TaskCardProps = {
   task: AiResultItemDto;
   onRetry: (task: AiResultItemDto) => void;
   isRetrying: boolean;
+  onViewSummary: (sessionId: string) => void;
 };
 
-const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
+const TaskCard = ({ task, onRetry, isRetrying, onViewSummary }: TaskCardProps) => {
   const bucket = getStatusBucket(task.aiStatus);
   const summaryText = trimText(task.summary, 40);
   const aiErrorText = trimText(task.aiError, 40)
@@ -193,7 +193,10 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
   );
 
   return (
-    <div className="rounded-lg border border-cultured bg-card p-6 shadow-theme-xs hover:scale-102 transition-all duration-300 hover:opacity-70 cursor-pointer">
+    <div
+      className="rounded-lg border border-cultured bg-card p-6 shadow-theme-xs hover:scale-102 transition-all duration-300 hover:opacity-70 cursor-pointer"
+      onClick={() => bucket === "success" && task.consultationId && onViewSummary(task.consultationId)}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-white flex items-center gap-1">
@@ -286,15 +289,17 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
               {isRetrying ? "Retrying..." : "Retry"}
             </Button>
           )}
-          {/* <Link
-            href={`/dashboard/ai-summary/${task.id}`}
-            className="text-xs font-medium text-white"
-          >
-            <div className=" gap-x-1 flex items-center rounded-md px-3 py-2 text-xs font-medium justify-center bg-gradient-primary">
-              Details
-              <ArrowUpRightIcon className="text-sm text-white" weight="bold"/>
+          {bucket === "success" && task.consultationId && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <Button
+                size="sm"
+                onClick={() => onViewSummary(task.consultationId)}
+                endIcon={<ArrowUpRightIcon weight="bold" />}
+              >
+                View Summary
+              </Button>
             </div>
-          </Link> */}
+          )}
         </div>
       </div>
     </div>
@@ -302,6 +307,7 @@ const TaskCard = ({ task, onRetry, isRetrying }: TaskCardProps) => {
 };
 
 export default function AiSummary() {
+  const router = useRouter();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [cursor, setCursor] = useState<string | undefined>(undefined);
@@ -333,6 +339,10 @@ export default function AiSummary() {
   );
 
   const retryMutation = useAiRetryMutation(accessToken);
+
+  const handleViewSummary = (sessionId: string) => {
+    router.push(`/doctor/summary-results/${sessionId}`);
+  };
 
   const handleRetry = (task: AiResultItemDto) => {
     if (!task.consultationId) return;
@@ -437,7 +447,7 @@ export default function AiSummary() {
     <main>
       {/* <PageBreadcrumb pageTitle="AI Summary" /> */}
 
-      <div className="rounded-lg border border-cultured bg-card min-h-screen">
+      <div className="rounded-lg border border-cultured bg-card h-auto">
         
         <div className="gap-4 p-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="relative w-full md:max-w-xs mb-6">
@@ -449,6 +459,7 @@ export default function AiSummary() {
               className="pl-10"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
+              icon={MagnifyingGlassIcon}
             />
           </div>
           
@@ -493,7 +504,7 @@ export default function AiSummary() {
                   >
                     {isFetching ? "Refreshing..." : `Auto Refresh ${refreshCountdown}s`}
                   </Button>
-                  <CreateRoomButton />
+                  {/* <CreateRoomButton /> */}
                 </div>
               </div>
           </div>
@@ -558,6 +569,7 @@ export default function AiSummary() {
                             task={task}
                             onRetry={handleRetry}
                             isRetrying={retryingId === task.id}
+                            onViewSummary={handleViewSummary}
                           />
                         ))
                       )}
@@ -589,6 +601,7 @@ export default function AiSummary() {
                           task={task}
                           onRetry={handleRetry}
                           isRetrying={retryingId === task.id}
+                          onViewSummary={handleViewSummary}
                         />
                       ))}
                     </div>

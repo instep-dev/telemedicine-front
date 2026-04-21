@@ -7,6 +7,7 @@ import type {
   RefreshResponseDto,
   RegisterDto,
   VerifyEmailDto,
+  VerifyEmailResponseDto,
 } from "./auth.dto";
 
 export const authApi = {
@@ -20,8 +21,8 @@ export const authApi = {
     return res.data;
   },
 
-  async verifyEmail(payload: VerifyEmailDto): Promise<BasicOkResponse> {
-    const res = await http.post<BasicOkResponse>("/auth/registration/verify-email", payload);
+  async verifyEmail(payload: VerifyEmailDto): Promise<VerifyEmailResponseDto> {
+    const res = await http.post<VerifyEmailResponseDto>("/auth/registration/verify-email", payload);
     return res.data;
   },
 

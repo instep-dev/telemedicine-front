@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "@/components/dashboard/ui/button/Button";
 import Input from "@/components/dashboard/form/input/InputField";
 import Badge from "@/components/dashboard/ui/badge/Badge";
@@ -15,6 +16,7 @@ import {
   SealCheckIcon,
   CircleNotchIcon,
   XIcon,
+  MagnifyingGlassIcon,
 } from "@phosphor-icons/react";
 import {
   Table,
@@ -103,6 +105,7 @@ type StatusFilterValue =
   | "FAILED";
 
 const HistoryPage = () => {
+  const router = useRouter();
   const accessToken = authStore((s) => s.accessToken);
 
   const [page, setPage] = useState(1);
@@ -269,6 +272,7 @@ const HistoryPage = () => {
               className="pl-10"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
+              icon={MagnifyingGlassIcon}
             />
           </div>
 
@@ -436,7 +440,12 @@ const HistoryPage = () => {
 
                     <TableCell className="border-b border-cultured p-6 text-end">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:scale-110 border-brand-900 bg-brand-500/10">
+                        <button
+                          onClick={() => router.push(`/doctor/summary-results/${item.consultationId}`)}
+                          disabled={!item.consultationId}
+                          className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:scale-110 border-brand-900 bg-brand-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="Lihat Summary"
+                        >
                           <BookOpenTextIcon className="h-4 w-4 text-brand-500" />
                         </button>
                         <button className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:scale-110 border-red-950 bg-red-500/10">

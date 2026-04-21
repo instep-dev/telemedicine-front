@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { UserDto } from "./auth.dto";
 
 type AuthState = {
@@ -11,17 +12,29 @@ type AuthState = {
   setBootstrapped: (v: boolean) => void;
 };
 
-export const authStore = create<AuthState>((set) => ({
-  accessToken: null,
-  user: null,
-  bootstrapped: false,
+export const authStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+      user: null,
+      bootstrapped: false,
 
-  setAuth: ({ accessToken, user }) =>
-    set((s) => ({
-      accessToken,
-      user: user ?? s.user,
-    })),
+      setAuth: ({ accessToken, user }) =>
+        set((s) => ({
+          accessToken,
+          user: user ?? s.user,
+        })),
 
-  clear: () => set({ accessToken: null, user: null }),
-  setBootstrapped: (v) => set({ bootstrapped: v }),
-}));
+      clear: () => set({ accessToken: null, user: null }),
+      setBootstrapped: (v) => set({ bootstrapped: v }),
+    }),
+    {
+      name: "telemedicine-auth",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        user: state.user,
+      }),
+    },
+  ),
+);

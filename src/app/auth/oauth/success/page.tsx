@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authStore } from "@/services/auth/auth.store";
 import { authApi } from "@/services/auth/auth.api";
 import { getDashboardPath } from "@/lib/route";
 
-export default function OAuthSuccessPage() {
+function OAuthSuccessPageContent() {
   const params = useSearchParams();
   const router = useRouter();
   const accessToken = params.get("accessToken");
@@ -54,5 +54,13 @@ export default function OAuthSuccessPage() {
         </p>
       )}
     </div>
+  );
+}
+
+export default function OAuthSuccessPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Memproses login OAuth...</div>}>
+      <OAuthSuccessPageContent />
+    </Suspense>
   );
 }

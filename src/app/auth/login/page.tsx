@@ -1,45 +1,26 @@
 "use client";
 
+import { Suspense } from "react";
 import LoginForm from "@/components/auth/LoginForm";
-import { Suspense, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import type { UserRole } from "@/services/auth/auth.dto";
+import AuthRoleLayout from "@/components/auth/AuthRoleLayout";
 
-const roles: { label: string; value: UserRole }[] = [
-  { label: "Dokter", value: "DOCTOR" },
-  { label: "Admin", value: "ADMIN" },
-  { label: "Patient", value: "PATIENT" },
-];
+function LoginPageContent() {
+  return (
+    <AuthRoleLayout
+      title="Login to your account"
+      subtitle="Please enter your details to login."
+      promptText="Don't have an account ?"
+      promptHrefBase="/auth/registration"
+      promptLinkLabel="Register Now"
+      renderForm={(role) => <LoginForm role={role} />}
+    />
+  );
+}
 
 export default function LoginPage() {
-  const params = useSearchParams();
-  const initialRole = useMemo(() => {
-    const roleParam = (params.get("role") || "").toUpperCase();
-    return roles.find((r) => r.value === roleParam)?.value ?? "DOCTOR";
-  }, [params]);
-
-  const [role, setRole] = useState<UserRole>(initialRole);
-
   return (
-    <div className="p-6">
-      <h1 className="text-xl mb-4">Login</h1>
-      <div className="flex gap-2 mb-4">
-        {roles.map((r) => (
-          <button
-            key={r.value}
-            type="button"
-            onClick={() => setRole(r.value)}
-            className={`border px-3 py-1.5 rounded-md text-sm ${
-              role === r.value ? "bg-gray-900 text-white" : "bg-white"
-            }`}
-          >
-            {r.label}
-          </button>
-        ))}
-      </div>
-      <Suspense fallback={<div>Loading...</div>}>
-        <LoginForm role={role} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

@@ -1,11 +1,11 @@
 import { http } from "@/services/api/axios";
 import type {
+  CallSessionResultResponse,
   DoctorTokenBody,
   DoctorTokenResponse,
-  GuestTokenBody,
-  GuestTokenResponse,
   EndCallResponse,
-  CallSessionResultResponse,
+  PatientTokenBody,
+  PatientTokenResponse,
   VideoTranscriptionPayload,
 } from "./twilio.dto";
 
@@ -17,14 +17,16 @@ export const twilioApi = {
     return res.data;
   },
 
-  getGuestToken: async (body: GuestTokenBody) => {
-    const res = await http.post<GuestTokenResponse>("/twilio/video/guest-token", body);
+  getPatientToken: async (accessToken: string, body: PatientTokenBody) => {
+    const res = await http.post<PatientTokenResponse>("/twilio/video/patient-token", body, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     return res.data;
   },
 
-  endCall: async (accessToken: string, consultationId: string) => {
+  endCall: async (accessToken: string, sessionId: string) => {
     const res = await http.post<EndCallResponse>(
-      `/twilio/video/end/${consultationId}`,
+      `/twilio/video/end/${sessionId}`,
       {},
       {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -33,9 +35,9 @@ export const twilioApi = {
     return res.data;
   },
 
-  getCallResult: async (accessToken: string, consultationId: string) => {
+  getCallResult: async (accessToken: string, sessionId: string) => {
     const res = await http.get<CallSessionResultResponse>(
-      `/twilio/video/result/${consultationId}`,
+      `/twilio/video/result/${sessionId}`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       },
@@ -44,13 +46,10 @@ export const twilioApi = {
   },
 
   sendTranscription: async (accessToken: string, payload: VideoTranscriptionPayload) => {
-    const res = await http.post(
-      `/twilio/video/transcription`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      },
-    );
+    const res = await http.post(`/twilio/video/transcription`, payload, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     return res.data;
   },
 };
+

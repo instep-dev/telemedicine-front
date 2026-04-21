@@ -47,18 +47,53 @@ export const useOAuthCompleteMutation = () => {
   });
 };
 
+const getJwtExpiryMs = (token: string): number | null => {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    let base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = base64.length % 4;
+    if (pad) {
+      base64 += "=".repeat(4 - pad);
+    }
+    const json = atob(base64);
+    const data = JSON.parse(json) as { exp?: number };
+    if (!data.exp) return null;
+    return data.exp * 1000;
+  } catch {
+    return null;
+  }
+};
+
+const isTokenStillValid = (token: string) => {
+  const expMs = getJwtExpiryMs(token);
+  if (!expMs) return false;
+  return expMs - Date.now() > 1_000;
+};
+
 /**
  * Jalan sekali saat app load.
  * - success: set accessToken
  * - 401: normal (belum login)
  */
 export const bootstrapAuth = async () => {
+  const current = authStore.getState();
+  const fallbackToken = current.accessToken;
+  const fallbackUser = current.user;
+
   try {
     const { accessToken, user } = await authApi.refresh();
     authStore.getState().setAuth({ accessToken, user });
   } catch (err: any) {
-    // 401 = belum login => normal, cukup clear
-    authStore.getState().clear();
+    // jika refresh gagal tapi token tersimpan masih valid, pertahankan sesi.
+    if (fallbackToken && fallbackUser && isTokenStillValid(fallbackToken)) {
+      authStore.getState().setAuth({
+        accessToken: fallbackToken,
+        user: fallbackUser,
+      });
+    } else {
+      authStore.getState().clear();
+    }
   } finally {
     authStore.getState().setBootstrapped(true);
   }

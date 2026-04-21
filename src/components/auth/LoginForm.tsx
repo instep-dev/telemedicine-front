@@ -5,9 +5,13 @@ import { useLoginMutation } from "@/services/auth/auth.queries";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { UserRole } from "@/services/auth/auth.dto";
 import { getDashboardPath } from "@/lib/route";
+import Input from "@/components/dashboard/form/input/InputField";
+import { Google } from "../reusable/Google";
+import { Microsoft } from "../reusable/Microsoft";
+import { CircleNotchIcon, EnvelopeSimpleIcon, LockIcon, UserIcon } from "@phosphor-icons/react";
 
 const roleLabels: Record<UserRole, string> = {
-  DOCTOR: "Dokter",
+  DOCTOR: "Doctor",
   ADMIN: "Admin",
   PATIENT: "Patient",
 };
@@ -20,6 +24,7 @@ export default function LoginForm({ role }: { role: UserRole }) {
   const login = useLoginMutation();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const apiBase = useMemo(() => {
     const base = process.env.NEXT_PUBLIC_NEST_API || "";
@@ -29,7 +34,7 @@ export default function LoginForm({ role }: { role: UserRole }) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const result = await login.mutateAsync({ identifier, password });
+      const result = await login.mutateAsync({ identifier, password, rememberMe });
       router.replace(next || getDashboardPath(result.user.role));
     } catch {
       // handled via state
@@ -37,65 +42,78 @@ export default function LoginForm({ role }: { role: UserRole }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-sm space-y-4">
-      <p className="text-sm text-gray-500">Login sebagai {roleLabels[role]}</p>
-      <div>
-        <label className="block text-sm mb-1">Email atau Nomor Telepon</label>
-        <input
+    <form onSubmit={onSubmit} className="max-w-sm mx-auto">
+      <div className="flex items-center gap-x-3 text-sm">
+        <button
+          type="button"
+          className="w-full border border-cultured bg-gradient-gray rounded-md py-2 flex items-center gap-x-2 justify-center"
+          onClick={() =>
+            (window.location.href = `${apiBase}/auth/oauth/google/start?role=${role}`)
+          }
+        >
+          <Google className="h-3 w-3 shrink-0" />
+          Google
+        </button>
+
+        <button
+          type="button"
+          className="w-full border border-cultured bg-gradient-gray rounded-md py-2 flex items-center gap-x-2 justify-center"
+          onClick={() =>
+            (window.location.href = `${apiBase}/auth/oauth/microsoft/start?role=${role}`)
+          }
+        >
+          <Microsoft className="h-3 w-3 shrink-0" />
+          Microsoft
+        </button>
+      </div>
+      <div className="flex items-center gap-x-2 justify-between">
+        <div className="w-full h-[1px] bg-accent/30"/>
+        <p className="text-[10px] text-accent">Or</p>
+        <div className="w-full h-[1px] bg-accent/30"/>
+      </div>
+      <div className="mt-6">
+        <label className="block text-xs text-accent mb-2">Username</label>
+        <Input
           className="border w-full p-2 rounded-md"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
           autoComplete="username"
-          placeholder="email@domain.com / 0812xxxx"
+          placeholder="Email or Phone"
+          icon={identifier.includes('@') ? EnvelopeSimpleIcon : UserIcon}
         />
       </div>
 
-      <div>
-        <label className="block text-sm mb-1">Password</label>
-        <input
+      <div className="mt-6">
+        <label className="block text-xs text-accent mb-2">Password</label>
+        <Input
           className="border w-full p-2 rounded-md"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
+          placeholder="*********"
+          icon={LockIcon}
         />
       </div>
 
-      {login.isError && (
-        <p className="text-red-600 text-sm">Login gagal. Cek kredensial.</p>
-      )}
+      <div className="mt-4 flex items-center gap-x-2">
+        <input
+          type="checkbox"
+          id="rememberMe"
+          className="w-4 h-4 rounded border-cultured bg-card text-primary focus:ring-primary"
+          checked={rememberMe}
+          onChange={(e) => setRememberMe(e.target.checked)}
+        />
+        <label htmlFor="rememberMe" className="text-xs text-accent cursor-pointer">
+          Remember me for 10 days
+        </label>
+      </div>
 
-      <button className="border px-4 py-2 rounded-md" disabled={login.isPending}>
-        {login.isPending ? "Loading..." : "Login"}
+      {login.isError && <p className="text-red-600 text-sm">Login gagal. Cek kredensial.</p>}
+
+      <button className="border px-4 py-2 rounded-lg border border-cultured text-sm mt-6 w-full bg-gradient-primary mx-auto" disabled={login.isPending}>
+        {login.isPending ? <CircleNotchIcon className="animate-spin text-primary"/> : "Login"}
       </button>
-
-      <div className="pt-2 space-y-2">
-        <button
-          type="button"
-          className="w-full border px-4 py-2 rounded-md"
-          onClick={() =>
-            (window.location.href = `${apiBase}/auth/oauth/google/start?role=${role}`)
-          }
-        >
-          Login dengan Google
-        </button>
-        <button
-          type="button"
-          className="w-full border px-4 py-2 rounded-md"
-          onClick={() =>
-            (window.location.href = `${apiBase}/auth/oauth/microsoft/start?role=${role}`)
-          }
-        >
-          Login dengan Microsoft
-        </button>
-      </div>
-
-      <div className="text-sm">
-        Belum punya akun?{" "}
-        <a className="underline" href={`/auth/registration?role=${role}`}>
-          Registrasi
-        </a>
-      </div>
     </form>
   );
 }

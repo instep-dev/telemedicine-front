@@ -3,6 +3,7 @@ export type UserRole = "DOCTOR" | "ADMIN" | "PATIENT";
 export type LoginDto = {
   identifier: string; // email atau phone
   password: string;
+  rememberMe?: boolean;
 };
 
 export type RegisterDto = {
@@ -18,7 +19,15 @@ export type RegisterDto = {
 };
 
 export type VerifyEmailDto = {
-  token: string;
+  email: string;
+  code: string;
+};
+
+export type VerifyEmailResponseDto = {
+  ok: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: UserDto;
 };
 
 export type OAuthCompleteDto = {
@@ -51,4 +60,47 @@ export type RefreshResponseDto = {
 
 export type BasicOkResponse = {
   ok: boolean;
+};
+
+export type DoctorProfileDto = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  license: string;
+};
+
+export type AdminProfileDto = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  adminId: string;
+};
+
+export type PatientProfileDto = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  bornDate: string;
+};
+
+export type UpdateDoctorProfileDto = {
+  fullName?: string;
+  phone?: string;
+  password?: string;
+};
+
+export type UpdateAdminProfileDto = {
+  fullName?: string;
+  phone?: string;
+  password?: string;
+};
+
+export type UpdatePatientProfileDto = {
+  fullName?: string;
+  phone?: string;
+  bornDate?: string;
+  password?: string;
 };

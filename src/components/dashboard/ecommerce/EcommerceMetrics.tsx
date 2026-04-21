@@ -15,6 +15,10 @@ type EcommerceMetricsProps = {
   consultationMinutes: number;
   patientsChangePct?: number | null;
   consultationMinutesChangePct?: number | null;
+  patientsLabel?: string;
+  consultationLabel?: string;
+  patientsUnitLabel?: string;
+  consultationUnitLabel?: string;
   loading?: boolean;
   error?: boolean;
 };
@@ -30,6 +34,10 @@ export const EcommerceMetrics = ({
   consultationMinutes,
   patientsChangePct,
   consultationMinutesChangePct,
+  patientsLabel = "Total Patients",
+  consultationLabel = "Total Consultations",
+  patientsUnitLabel = "Persons",
+  consultationUnitLabel = "Minutes",
   loading = false,
   error = false,
 }: EcommerceMetricsProps) => {
@@ -69,11 +77,11 @@ export const EcommerceMetrics = ({
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-white">
-              Total Patients
+              {patientsLabel}
             </span>
             <h4 className="mt-2 font-bold text-title-sm text-white flex items-end gap-x-1">
               {patientsDisplay}
-              <p className="text-base mb-1 ml-0.5 text-sm text-accent">Persons</p>
+              <p className="text-base mb-1 ml-0.5 text-sm text-accent">{patientsUnitLabel}</p>
             </h4>
           </div>
           {loading ? (
@@ -100,11 +108,11 @@ export const EcommerceMetrics = ({
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-white">
-              Total Consultations
+              {consultationLabel}
             </span>
             <h4 className="mt-2 font-bold text-title-sm text-white flex items-end gap-x-1">
               {minutesDisplay}
-              <p className="text-base mb-1 ml-0.5 text-sm text-accent">Minutes</p>
+              <p className="text-base mb-1 ml-0.5 text-sm text-accent">{consultationUnitLabel}</p>
             </h4>
           </div>
 

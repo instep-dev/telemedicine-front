@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import type { ConsultationDto } from "./consultations.dto";
+import type { ConsultationSessionDto } from "./consultations.dto";
 
 type ConsultationState = {
-  activeConsultation: ConsultationDto | null;
-  setActiveConsultation: (c: ConsultationDto | null) => void;
+  activeConsultation: ConsultationSessionDto | null;
+  setActiveConsultation: (c: ConsultationSessionDto | null) => void;
 };
 
 export const useConsultationStore = create<ConsultationState>((set) => ({

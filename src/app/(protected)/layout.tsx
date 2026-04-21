@@ -117,7 +117,7 @@ export default function ProtectedLayout({
         closeOnClick
         pauseOnHover
         draggable
-        style={{ zIndex: 100000, top: "5rem" }}
+        style={{ zIndex: 100000, top: "1rem" }}
       />
       <AiSummaryStatusWatcher />
       {children}
