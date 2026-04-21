@@ -7,22 +7,18 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import Button from "@/components/dashboard/ui/button/Button";
-import { useCreateRoom } from "@/hooks/useCreateRoom";  
 import { MagnifyingGlassIcon, CaretDoubleLeftIcon } from "@phosphor-icons/react";
+import { BellRingingIcon } from "@phosphor-icons/react";
 
-const CreateRoomButton: React.FC = () => {
-  const { handleCreateRoom, isCreating } = useCreateRoom();
-
+const NotificationsButton: React.FC = () => {
   return (
-    <Button
-      onClick={handleCreateRoom}
-      startIcon={<PlusIcon weight="bold" />}
-      disabled={isCreating}
-    >
-      {isCreating ? "Creating..." : "Create Room"}
-    </Button>
-  );
-};
+    <div className="cursor-pointer flex h-11 w-11 gap-2 items-center justify-center rounded-full border border-cultured bg-gradient-primary text-sm font-semibold text-white relative">
+      <BellRingingIcon size={16} weight="bold" className=""/>
+      <div className="w-2 h-2 rounded-full absolute top-0 right-1 bg-red-400 animate-ping z-10"/>
+      <div className="w-2 h-2 rounded-full absolute top-0 right-1 bg-red-300"/>
+    </div>
+  )
+}
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -138,10 +134,11 @@ const AppHeader: React.FC = () => {
           } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
-            <CreateRoomButton />
+            {/* <CreateRoomButton /> */}
             {/* <!-- Dark Mode Toggler --> */}
-            <ThemeToggleButton />
-            {/* <!-- Dark Mode Toggler --> */}         
+            {/* <ThemeToggleButton /> */}
+            {/* <!-- Dark Mode Toggler --> */}      
+            <NotificationsButton/>   
           </div>
           {/* <!-- User Area --> */}
           <UserDropdown /> 

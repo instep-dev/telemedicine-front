@@ -8,7 +8,7 @@ export default function MarketingLayout({
 }) {
   return (
     <>
-      {/* <Navbar /> */}
+      <Navbar />
       {children}
       {/* <Footer /> */}
     </>

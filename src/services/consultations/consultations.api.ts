@@ -1,20 +1,96 @@
 import { http } from "@/services/api/axios";
 import type {
-  ConsultationDto,
-  CreateConsultationBody,
-  ConsultationLinkInfo,
+  ConsultationSessionDto,
+  ConsultationSessionNoteDto,
+  CreateConsultationSessionBody,
+  DoctorOptionDto,
+  ListConsultationSessionsParams,
+  PatientOptionDto,
 } from "./consultations.dto";
 
 export const consultationsApi = {
-  create: async (accessToken: string, body?: CreateConsultationBody) => {
-    const res = await http.post<ConsultationDto>("/consultations", body ?? {}, {
+  createSession: async (
+    accessToken: string,
+    body: CreateConsultationSessionBody,
+  ) => {
+    const res = await http.post<ConsultationSessionDto>("/consultations/sessions", body, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     return res.data;
   },
 
-  getByLinkToken: async (linkToken: string) => {
-    const res = await http.get<ConsultationLinkInfo>(`/consultations/link/${linkToken}`);
+  listAdminSessions: async (accessToken: string, params?: ListConsultationSessionsParams) => {
+    const res = await http.get<ConsultationSessionDto[]>("/consultations/sessions/admin", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params,
+    });
+    return res.data;
+  },
+
+  listAdminHistorySessions: async (
+    accessToken: string,
+    params?: ListConsultationSessionsParams,
+  ) => {
+    const res = await http.get<ConsultationSessionDto[]>(
+      "/consultations/sessions/admin/history",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params,
+      },
+    );
+    return res.data;
+  },
+
+  listDoctorSessions: async (
+    accessToken: string,
+    params?: ListConsultationSessionsParams,
+  ) => {
+    const res = await http.get<ConsultationSessionDto[]>("/consultations/sessions/doctor", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params,
+    });
+    return res.data;
+  },
+
+  listPatientSessions: async (
+    accessToken: string,
+    params?: ListConsultationSessionsParams,
+  ) => {
+    const res = await http.get<ConsultationSessionDto[]>("/consultations/sessions/patient", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params,
+    });
+    return res.data;
+  },
+
+  getSessionById: async (accessToken: string, sessionId: string) => {
+    const res = await http.get<ConsultationSessionDto>(`/consultations/sessions/${sessionId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data;
+  },
+
+  getSessionNoteById: async (accessToken: string, sessionId: string) => {
+    const res = await http.get<ConsultationSessionNoteDto | null>(
+      `/consultations/sessions/${sessionId}/note`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+    return res.data;
+  },
+
+  listDoctors: async (accessToken: string) => {
+    const res = await http.get<DoctorOptionDto[]>("/consultations/lookups/doctors", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data;
+  },
+
+  listPatients: async (accessToken: string) => {
+    const res = await http.get<PatientOptionDto[]>("/consultations/lookups/patients", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     return res.data;
   },
 };

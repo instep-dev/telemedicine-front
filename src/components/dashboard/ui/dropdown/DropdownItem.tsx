@@ -25,7 +25,7 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
   const computedBaseClass =
     baseClassName ??
     `block w-full text-left px-4 py-2 text-sm text-gray-700 ${
-      variant ? "hover:bg-blue-50 hover:text-blue-600" : "hover:bg-red-100 hover:text-red-600"
+      variant ? "hover:opacity-70" : "hover:bg-red-500/30 hover:text-white"
     } transition-all duration-400`;
   const combinedClasses = `${computedBaseClass} ${className}`.trim();
 
