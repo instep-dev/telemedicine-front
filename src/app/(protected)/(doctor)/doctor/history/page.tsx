@@ -275,7 +275,7 @@ const HistoryPage = () => {
               icon={MagnifyingGlassIcon}
             />
           </div>
-
+ 
           <div className="flex items-center gap-3">
             <div className="relative">
               <Button
