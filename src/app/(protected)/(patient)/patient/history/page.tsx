@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpenTextIcon,
@@ -26,6 +26,8 @@ import DataEmpty from "@/components/reusable/DataEmpty";
 import { authStore } from "@/services/auth/auth.store";
 import { usePatientSessionsQuery } from "@/services/consultations/consultations.queries";
 import type { SessionStatus } from "@/services/consultations/consultations.dto";
+
+const getAuthState = () => authStore.getState();
 
 type StatusFilterValue = "all" | SessionStatus;
 
@@ -60,7 +62,11 @@ function formatDateTime(iso: string | null | undefined): string {
 
 const PatientHistoryPage = () => {
   const router = useRouter();
-  const accessToken = authStore((s) => s.accessToken);
+  const { accessToken } = useSyncExternalStore(
+    authStore.subscribe,
+    getAuthState,
+    getAuthState,
+  );
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");

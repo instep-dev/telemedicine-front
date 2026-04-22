@@ -70,6 +70,11 @@ const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: <CalendarBlankIcon size={22} />,
       path: "/patient/schedule",
     },
+    {
+      name: "Consultations History",
+      icon: <TableIcon size={22} />,
+      path: "/patient/history",
+    },
   ],
 };
 
