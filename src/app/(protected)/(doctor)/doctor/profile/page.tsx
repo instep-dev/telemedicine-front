@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   useGetDoctorProfileQuery,
@@ -63,6 +63,9 @@ export default function DoctorProfilePage() {
 
   // Picture Upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -84,7 +87,7 @@ export default function DoctorProfilePage() {
         fullName: fullName.trim(),
         phone: phone.trim(),
       });
-      alert("Profil berhasil diperbarui");
+      alert("Profile updated successfully");
       router.refresh();
     } catch {
       // handled via state
@@ -99,7 +102,7 @@ export default function DoctorProfilePage() {
         password: changeEmailPassword.trim(),
       });
       setChangeEmailStep("confirm");
-      alert("Kode verifikasi telah dikirim ke email baru");
+      alert("Verification code has been sent to your new email");
     } catch {
       // handled via state
     }
@@ -112,7 +115,7 @@ export default function DoctorProfilePage() {
         newEmail: newEmail.trim(),
         code: emailVerificationCode.trim(),
       });
-      alert("Email berhasil diubah!");
+      alert("Email updated successfully!");
       setChangeEmailStep("request");
       setNewEmail("");
       setChangeEmailPassword("");
@@ -128,7 +131,7 @@ export default function DoctorProfilePage() {
     try {
       await requestPasswordReset.mutateAsync();
       setPasswordResetStep("verify");
-      alert("Kode reset password telah dikirim ke email");
+      alert("Password reset code has been sent to your email");
     } catch {
       // handled via state
     }
@@ -148,7 +151,7 @@ export default function DoctorProfilePage() {
   async function onSetNewPassword(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword1 !== newPassword2) {
-      alert("Password tidak cocok");
+      alert("Passwords do not match");
       return;
     }
     try {
@@ -156,7 +159,7 @@ export default function DoctorProfilePage() {
         code: pendingResetCode,
         newPassword: newPassword1.trim(),
       });
-      alert("Password berhasil diubah!");
+      alert("Password updated successfully!");
       setPasswordResetStep("request");
       setResetCode("");
       setPendingResetCode("");
@@ -171,12 +174,12 @@ export default function DoctorProfilePage() {
   async function onUploadPicture(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedFile) {
-      alert("Pilih file terlebih dahulu");
+      alert("Please select a file first");
       return;
     }
     try {
       await uploadPicture.mutateAsync(selectedFile);
-      alert("Foto profil berhasil diubah");
+      alert("Profile picture updated successfully");
       setSelectedFile(null);
       router.refresh();
     } catch {
@@ -224,7 +227,7 @@ export default function DoctorProfilePage() {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nama lengkap"
+                placeholder="Full name"
                 icon={UserIcon}
               />
             </div>
@@ -338,7 +341,7 @@ export default function DoctorProfilePage() {
                   {requestEmailChange.isPending ? (
                     <CircleNotchIcon className="animate-spin inline mr-2" size={18} />
                   ) : (
-                    "Kirim Kode Verifikasi"
+                    "Send Verification Code"
                   )}
                 </button>
               </form>
@@ -354,7 +357,7 @@ export default function DoctorProfilePage() {
                     type="text"
                     value={emailVerificationCode}
                     onChange={(e) => setEmailVerificationCode(e.target.value)}
-                    placeholder="Masukkan kode 6 digit"
+                    placeholder="Enter 6-digit code"
                   />
                   <p className="text-xs text-neutral-500 mt-2">Code expired in 30 mins</p>
                 </div>
@@ -434,7 +437,7 @@ export default function DoctorProfilePage() {
                     type="text"
                     value={resetCode}
                     onChange={(e) => setResetCode(e.target.value)}
-                    placeholder="Masukkan kode 6 digit"
+                    placeholder="Enter 6-digit code"
                   />
                   <p className="text-xs text-gray-400 mt-1">Code expired in 10 mins</p>
                 </div>
@@ -541,34 +544,55 @@ export default function DoctorProfilePage() {
       {/* Picture Upload Tab */}
       {activeTab === "picture" && (
         <form onSubmit={onUploadPicture} className="space-y-4">
-          <div className="border-2 border-dashed rounded-lg bg-card border-cultured p-6 text-center h-[50vh] flex items-center justify-center">
-            {selectedFile ? (
-              <div>
-                <p className="text-sm font-medium mb-2">{selectedFile.name}</p>
-                <p className="text-xs text-gray-400">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/svg+xml,image/avif"
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setSelectedFile(file);
+              setPreviewUrl(file ? URL.createObjectURL(file) : null);
+            }}
+            className="hidden"
+          />
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              const file = e.dataTransfer.files?.[0] || null;
+              if (file && file.type.startsWith("image/")) {
+                setSelectedFile(file);
+                setPreviewUrl(URL.createObjectURL(file));
+              }
+            }}
+            className={`border-2 border-dashed rounded-lg bg-card p-6 text-center h-[50vh] flex flex-col items-center justify-center cursor-pointer transition-colors ${
+              isDragging ? "border-brand-500 bg-brand-500/5" : "border-cultured hover:border-neutral-500"
+            }`}
+          >
+            {previewUrl ? (
+              <div className="flex flex-col items-center gap-3">
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="h-40 w-40 rounded-full object-cover border-2 border-cultured"
+                />
+                <p className="text-sm font-medium text-white">{selectedFile?.name}</p>
+                <p className="text-xs text-neutral-500">
+                  {selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) : "0"} MB
                 </p>
+                <p className="text-xs text-neutral-400">Click to change photo</p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-3">
                 <PanoramaIcon size={72} className="text-neutral-500" />
+                <p className="text-sm font-medium text-white">Click or drag & drop to upload</p>
+                <p className="text-xs text-neutral-500">JPG, PNG, SVG, AVIF • Max 2MB</p>
               </div>
             )}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/svg+xml,image/avif"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              className="hidden"
-              id="picture-upload"
-            />
-            {/* <label htmlFor="picture-upload" className="cursor-pointer block mt-4">
-              {selectedFile ? "Change File" : "Choose File"}
-            </label> */}
           </div>
-
-          <p className="text-xs text-neutral-500">
-            Format: JPG, JPEG, PNG, SVG, AVIF • Max: 2MB
-          </p>
 
           {uploadPicture.error && (
             <p className="text-red-600 text-sm">{getErrorMessage(uploadPicture.error)}</p>
@@ -582,7 +606,7 @@ export default function DoctorProfilePage() {
             {uploadPicture.isPending ? (
               <CircleNotchIcon className="animate-spin inline mr-2" size={18} />
             ) : (
-              "Upload profile"
+              "Upload photo"
             )}
           </button>
         </form>

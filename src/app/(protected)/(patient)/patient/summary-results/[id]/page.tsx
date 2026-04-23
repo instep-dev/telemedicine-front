@@ -28,7 +28,7 @@ const getPatientAuthState = () => authStore.getState();
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "-";
-  return new Date(iso).toLocaleString("id-ID", {
+  return new Date(iso).toLocaleString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -45,7 +45,7 @@ function ReadOnlyField({ label, value }: { label: string; value: string | null }
       </div>
       <div className="px-5 pb-5">
         <p className="text-sm text-accent whitespace-pre-wrap min-h-[48px]">
-          {value || <span className="italic opacity-50">Belum diisi oleh dokter</span>}
+          {value || <span className="italic opacity-50">Not yet filled in by the doctor</span>}
         </p>
       </div>
     </div>
@@ -73,19 +73,19 @@ function NotFoundCard({ sessionId }: { sessionId: string }) {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-white">Hasil Konsultasi</h1>
-        <p className="text-sm text-accent">Sesi {sessionId}</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-white">Consultation Results</h1>
+        <p className="text-sm text-accent">Session {sessionId}</p>
       </header>
       <div className="rounded-lg border border-cultured bg-card">
         <div className="px-6 pt-6 pb-2">
-          <h3 className="font-semibold text-white">Data Tidak Ditemukan</h3>
+          <h3 className="font-semibold text-white">Data Not Found</h3>
           <p className="text-sm text-accent mt-1">
-            Hasil konsultasi tidak tersedia atau belum dapat diakses.
+            Consultation results are unavailable or cannot be accessed.
           </p>
         </div>
         <div className="px-6 pb-6 pt-4">
           <Link href="/patient/history" className={cn(buttonVariants({ variant: "outline" }))}>
-            Kembali ke Riwayat
+            Back to History
           </Link>
         </div>
       </div>
@@ -97,27 +97,27 @@ function PendingFinalizationCard({ sessionId }: { sessionId: string }) {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-white">Hasil Konsultasi</h1>
-        <p className="text-sm text-accent">Sesi {sessionId}</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-white">Consultation Results</h1>
+        <p className="text-sm text-accent">Session {sessionId}</p>
       </header>
       <div className="rounded-lg border border-cultured bg-card">
         <div className="px-6 pt-6 pb-2">
           <div className="flex items-center gap-2">
             <LockIcon size={20} className="text-accent" />
-            <h3 className="font-semibold text-white">Menunggu Dokter</h3>
+            <h3 className="font-semibold text-white">Awaiting Doctor</h3>
           </div>
           <p className="text-sm text-accent mt-2">
-            Hasil konsultasi Anda sedang ditinjau oleh dokter. Halaman ini akan otomatis
-            memperbarui ketika dokter telah memfinalisasi hasilnya.
+            Your consultation results are being reviewed by the doctor. This page will
+            automatically update once the doctor has finalized the results.
           </p>
         </div>
         <div className="px-6 pb-6 pt-4 space-y-4">
           <div className="flex items-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-sm text-yellow-400">
             <SparkleIcon size={16} className="animate-pulse" />
-            Menunggu finalisasi dari dokter...
+            Awaiting finalization from the doctor...
           </div>
           <Link href="/patient/history" className={cn(buttonVariants({ variant: "outline" }))}>
-            Kembali ke Riwayat
+            Back to History
           </Link>
         </div>
       </div>
@@ -127,42 +127,42 @@ function PendingFinalizationCard({ sessionId }: { sessionId: string }) {
 
 function SummaryContent({ note }: { note: SoapNoteDto }) {
   const soapFields = [
-    { field: "subjective" as const, label: "Subjective (Keluhan Pasien)" },
-    { field: "objective" as const, label: "Objective (Temuan Fisik)" },
+    { field: "subjective" as const, label: "Subjective (Patient Complaints)" },
+    { field: "objective" as const, label: "Objective (Physical Findings)" },
     { field: "assessment" as const, label: "Assessment (Diagnosis)" },
-    { field: "plan" as const, label: "Plan (Rencana Pengobatan)" },
+    { field: "plan" as const, label: "Plan (Treatment Plan)" },
   ];
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Hasil Konsultasi</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">Consultation Results</h1>
           <p className="text-sm text-accent">
-            Ringkasan konsultasi Anda pada {formatDateTime(note.scheduledStartTime)}.
+            Summary of your consultation on {formatDateTime(note.scheduledStartTime)}.
           </p>
         </div>
         <Link href="/patient/history" className={cn(buttonVariants({ variant: "outline" }))}>
-          Kembali ke Riwayat
+          Back to History
         </Link>
       </header>
 
       <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-3 text-sm text-green-400">
         <CheckCircleIcon size={16} />
-        Hasil konsultasi telah difinalisasi oleh dokter pada {formatDateTime(note.finalizedAt)}.
+        Consultation results have been finalized by the doctor on {formatDateTime(note.finalizedAt)}.
       </div>
 
       <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-lg border border-cultured bg-card">
           <div className="px-6 pt-6 pb-4">
-            <h3 className="font-semibold text-white">Ringkasan Sesi</h3>
-            <p className="text-sm text-accent mt-1">Informasi konsultasi Anda.</p>
+            <h3 className="font-semibold text-white">Session Summary</h3>
+            <p className="text-sm text-accent mt-1">Your consultation information.</p>
           </div>
           <div className="px-6 pb-6 space-y-4">
             <div className="flex flex-wrap gap-2">
               <Badge className="gap-1 bg-green-500/10 text-green-400 border-green-500/20">
                 <CheckCircleIcon size={12} />
-                Sudah Difinalisasi
+                Finalized
               </Badge>
               <Badge variant="outline">{formatDateTime(note.finalizedAt)}</Badge>
             </div>
@@ -178,21 +178,21 @@ function SummaryContent({ note }: { note: SoapNoteDto }) {
 
             <div className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Dokter</p>
+                <p className="text-xs text-accent">Doctor</p>
                 <p className="font-medium text-white">{note.doctorName ?? "-"}</p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Waktu Konsultasi</p>
+                <p className="text-xs text-accent">Consultation Time</p>
                 <p className="font-medium text-white">{formatDateTime(note.scheduledStartTime)}</p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Durasi</p>
+                <p className="text-xs text-accent">Duration</p>
                 <p className="font-medium text-white">
-                  {note.durationMinutes ? `${note.durationMinutes} menit` : "-"}
+                  {note.durationMinutes ? `${note.durationMinutes} min` : "-"}
                 </p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Mode Konsultasi</p>
+                <p className="text-xs text-accent">Consultation Mode</p>
                 <p className="font-medium text-white">{note.consultationMode ?? "-"}</p>
               </div>
             </div>
@@ -201,8 +201,8 @@ function SummaryContent({ note }: { note: SoapNoteDto }) {
 
         <div className="rounded-lg border border-cultured bg-card">
           <div className="px-6 pt-6 pb-4">
-            <h3 className="font-semibold text-white">Info AI</h3>
-            <p className="text-sm text-accent mt-1">Ringkasan dibantu oleh AI.</p>
+            <h3 className="font-semibold text-white">AI Info</h3>
+            <p className="text-sm text-accent mt-1">Summary assisted by AI.</p>
           </div>
           <div className="px-6 pb-6 space-y-4">
             <div className="flex items-start gap-3">
@@ -210,26 +210,26 @@ function SummaryContent({ note }: { note: SoapNoteDto }) {
                 <BrainIcon size={18} weight="duotone" />
               </div>
               <div className="space-y-1 text-sm">
-                <p className="font-medium text-white">Diproses oleh AI</p>
+                <p className="font-medium text-white">Processed by AI</p>
                 <p className="text-accent text-xs">
-                  Hasil SOAP telah ditinjau dan difinalisasi oleh dokter Anda.
+                  The SOAP results have been reviewed and finalized by your doctor.
                 </p>
               </div>
             </div>
             <div className="border-t border-cultured" />
             <div className="space-y-2 text-sm">
               <div className="flex justify-between rounded-lg border border-cultured bg-card/50 p-3">
-                <span className="text-accent">Model AI</span>
+                <span className="text-accent">AI Model</span>
                 <span className="font-medium text-white">{note.aiModel ?? "-"}</span>
               </div>
               <div className="flex justify-between rounded-lg border border-cultured bg-card/50 p-3">
-                <span className="text-accent">Difinalisasi</span>
+                <span className="text-accent">Finalized</span>
                 <span className="font-medium text-white">{formatDateTime(note.finalizedAt)}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 text-xs text-accent">
               <WarningCircleIcon size={14} />
-              Hasil telah diverifikasi oleh dokter Anda.
+              Results have been verified by your doctor.
             </div>
           </div>
         </div>
@@ -241,7 +241,7 @@ function SummaryContent({ note }: { note: SoapNoteDto }) {
           <h2 className="text-lg font-semibold text-white">SOAP Note</h2>
           <Badge variant="outline" className="gap-1 text-xs">
             <LockIcon size={10} />
-            Hanya bisa dilihat
+            Read-only
           </Badge>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -254,21 +254,21 @@ function SummaryContent({ note }: { note: SoapNoteDto }) {
       <section>
         <div className="rounded-lg border border-cultured bg-card">
           <div className="px-6 pt-6 pb-4">
-            <h3 className="font-semibold text-white">Langkah Selanjutnya</h3>
-            <p className="text-sm text-accent mt-1">Rekomendasi dari dokter Anda.</p>
+            <h3 className="font-semibold text-white">Next Steps</h3>
+            <p className="text-sm text-accent mt-1">Recommendations from your doctor.</p>
           </div>
           <div className="px-6 pb-6 grid gap-3 text-sm sm:grid-cols-3">
             <div className="flex items-start gap-3 rounded-lg border border-cultured bg-card/50 p-3">
               <ShieldCheckIcon size={16} className="text-primary mt-0.5 shrink-0" />
-              <span className="text-accent">Ikuti instruksi pengobatan sesuai plan di atas.</span>
+              <span className="text-accent">Follow the treatment instructions as per the plan above.</span>
             </div>
             <div className="flex items-start gap-3 rounded-lg border border-cultured bg-card/50 p-3">
               <HeartbeatIcon size={16} className="text-primary mt-0.5 shrink-0" />
-              <span className="text-accent">Jadwalkan follow-up jika keluhan berlanjut.</span>
+              <span className="text-accent">Schedule a follow-up if symptoms persist.</span>
             </div>
             <div className="flex items-start gap-3 rounded-lg border border-cultured bg-card/50 p-3">
               <FileTextIcon size={16} className="text-primary mt-0.5 shrink-0" />
-              <span className="text-accent">Simpan hasil ini sebagai referensi kesehatan Anda.</span>
+              <span className="text-accent">Save these results as a reference for your health records.</span>
             </div>
           </div>
         </div>

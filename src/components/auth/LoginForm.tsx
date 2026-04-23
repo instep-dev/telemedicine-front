@@ -9,6 +9,7 @@ import Input from "@/components/dashboard/form/input/InputField";
 import { Google } from "../reusable/Google";
 import { Microsoft } from "../reusable/Microsoft";
 import { CircleNotchIcon, EnvelopeSimpleIcon, LockIcon, UserIcon } from "@phosphor-icons/react";
+import Notify from "../reusable/Notify";
 
 const roleLabels: Record<UserRole, string> = {
   DOCTOR: "Doctor",
@@ -109,10 +110,10 @@ export default function LoginForm({ role }: { role: UserRole }) {
         </label>
       </div>
 
-      {login.isError && <p className="text-red-600 text-sm">Login gagal. Cek kredensial.</p>}
+      {login.isError && <Notify variant={false} error={'Login failed, check your credentials'}/>}
 
-      <button className="border px-4 py-2 rounded-lg border border-cultured text-sm mt-6 w-full bg-gradient-primary mx-auto" disabled={login.isPending}>
-        {login.isPending ? <CircleNotchIcon className="animate-spin text-primary"/> : "Login"}
+      <button className="border px-4 py-2 rounded-lg border border-cultured text-sm mt-6 w-full bg-gradient-primary mx-auto flex items-center justify-center" disabled={login.isPending}>
+        {login.isPending ? <CircleNotchIcon className="animate-spin text-white"/> : "Login"}
       </button>
     </form>
   );

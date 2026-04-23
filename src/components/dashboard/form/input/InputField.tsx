@@ -21,7 +21,7 @@ const Input: FC<InputProps> = ({
   ...rest
 }) => {
   // Determine input styles based on state (disabled, success, error)
-  let inputClasses = `h-11 w-full rounded-lg border border-cultured bg-card py-2.5 ${Icon ? 'pl-12' : 'pl-4'} pr-4 text-sm text-white shadow-theme-xs placeholder:text-white/30  focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 placeholder:text-xs ${className}`;
+  let inputClasses = `h-11 w-full rounded-lg border border-cultured bg-card py-2.5 pr-10 ${Icon ? 'pl-12' : 'pl-4'} pr-4 text-sm text-white shadow-theme-xs placeholder:text-white/30  focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 placeholder:text-xs ${className}`;
 
   // Add styles for the different states
   if (disabled) {

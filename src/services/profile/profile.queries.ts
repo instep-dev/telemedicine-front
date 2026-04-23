@@ -66,8 +66,13 @@ export const useSetNewPasswordDoctorMutation = () => {
 };
 
 export const useUploadProfilePictureDoctorMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => profileApi.uploadProfilePicture("doctor", file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-picture", "DOCTOR"] });
+      queryClient.invalidateQueries({ queryKey: ["doctor-profile"] });
+    },
   });
 };
 
@@ -133,8 +138,13 @@ export const useSetNewPasswordAdminMutation = () => {
 };
 
 export const useUploadProfilePictureAdminMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => profileApi.uploadProfilePicture("admin", file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-picture", "ADMIN"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-profile"] });
+    },
   });
 };
 
@@ -200,7 +210,12 @@ export const useSetNewPasswordPatientMutation = () => {
 };
 
 export const useUploadProfilePicturePatientMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => profileApi.uploadProfilePicture("patient", file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-picture", "PATIENT"] });
+      queryClient.invalidateQueries({ queryKey: ["patient-profile"] });
+    },
   });
 };

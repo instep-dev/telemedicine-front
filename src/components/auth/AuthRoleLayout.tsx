@@ -46,7 +46,7 @@ export default function AuthRoleLayout({
   }, [initialRole]);
 
   return (
-    <div className="py-6 px-12 flex flex-col justify-between">
+    <div className="py-6 px-12 flex flex-col justify-between gap-y-12">
       <div className="text-sm text-right text-accent flex items-center gap-x-1 justify-end">
         {promptText}{" "}
         <div className="relative group">

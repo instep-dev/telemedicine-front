@@ -80,17 +80,12 @@ export const bootstrapAuth = async () => {
   const current = authStore.getState();
   const fallbackToken = current.accessToken;
   const fallbackUser = current.user;
-
   try {
     const { accessToken, user } = await authApi.refresh();
     authStore.getState().setAuth({ accessToken, user });
-  } catch (err: any) {
-    // jika refresh gagal tapi token tersimpan masih valid, pertahankan sesi.
+  } catch {
     if (fallbackToken && fallbackUser && isTokenStillValid(fallbackToken)) {
-      authStore.getState().setAuth({
-        accessToken: fallbackToken,
-        user: fallbackUser,
-      });
+      authStore.getState().setAuth({ accessToken: fallbackToken, user: fallbackUser });
     } else {
       authStore.getState().clear();
     }
