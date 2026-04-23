@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import LoginForm from "@/components/auth/LoginForm";
 import AuthRoleLayout from "@/components/auth/AuthRoleLayout";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 
 function LoginPageContent() {
   return (
@@ -19,7 +20,11 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="p-6">Loading...</div>}>
+    <Suspense fallback={
+      <div className="w-full h-full flex items-center justify-center">
+        <CircleNotchIcon className="animate-spin text-primary"/>
+      </div>
+    }>
       <LoginPageContent />
     </Suspense>
   );

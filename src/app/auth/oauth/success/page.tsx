@@ -47,10 +47,10 @@ function OAuthSuccessPageContent() {
   return (
     <div className="p-6">
       <h1 className="text-xl mb-2">OAuth</h1>
-      {status === "loading" && <p className="text-sm">Memproses login OAuth...</p>}
+      {status === "loading" && <p className="text-sm">Processing OAuth login...</p>}
       {status === "error" && (
         <p className="text-sm text-red-600">
-          OAuth gagal. Silakan coba lagi.
+          OAuth failed. Please try again.
         </p>
       )}
     </div>
@@ -59,7 +59,7 @@ function OAuthSuccessPageContent() {
 
 export default function OAuthSuccessPage() {
   return (
-    <Suspense fallback={<div className="p-6">Memproses login OAuth...</div>}>
+    <Suspense fallback={<div className="p-6">Processing OAuth login...</div>}>
       <OAuthSuccessPageContent />
     </Suspense>
   );

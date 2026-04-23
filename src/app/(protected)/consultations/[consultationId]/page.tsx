@@ -328,7 +328,7 @@ export default function ConsultationSessionPage() {
   useEffect(() => {
     if (!sessionId || !accessToken || !user) return;
     if (!(isDoctor || isPatient)) {
-      setErrMsg("Hanya dokter atau patient yang boleh join consultation.");
+      setErrMsg("Only doctors or patients are allowed to join a consultation.");
       return;
     }
     if (hasStartedRef.current) return;
@@ -433,11 +433,11 @@ export default function ConsultationSessionPage() {
             <p className="text-white/30 text-sm">
               {!connected
                 ? isConnecting
-                  ? "Menghubungkan..."
-                  : "Gagal terhubung"
+                  ? "Connecting..."
+                  : "Failed to connect"
                 : isVoiceMode
-                ? "Voice call berjalan"
-                : "Menunggu peserta lain..."}
+                ? "Voice call in progress"
+                : "Waiting for other participant..."}
             </p>
           </div>
         )}
@@ -519,7 +519,7 @@ export default function ConsultationSessionPage() {
                   Microphone
                 </p>
                 {audioDevices.length === 0 ? (
-                  <p className="text-white/40 text-sm px-4 pb-2">Tidak ada perangkat</p>
+                  <p className="text-white/40 text-sm px-4 pb-2">No devices found</p>
                 ) : (
                   audioDevices.map((d) => (
                     <button
@@ -578,7 +578,7 @@ export default function ConsultationSessionPage() {
                     Camera
                   </p>
                   {videoDevices.length === 0 ? (
-                    <p className="text-white/40 text-sm px-4 pb-2">Tidak ada kamera</p>
+                    <p className="text-white/40 text-sm px-4 pb-2">No cameras found</p>
                   ) : (
                     videoDevices.map((d) => (
                       <button

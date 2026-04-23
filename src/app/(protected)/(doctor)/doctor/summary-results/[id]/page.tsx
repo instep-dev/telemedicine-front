@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useState, useSyncExternalStore } from "react";
 import {
+  ArticleIcon,
   BrainIcon,
   CheckCircleIcon,
   ClipboardTextIcon,
@@ -42,7 +43,7 @@ const FIELD_LABELS: Record<EditableField, string> = {
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "-";
-  return new Date(iso).toLocaleString("id-ID", {
+  return new Date(iso).toLocaleString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -56,21 +57,21 @@ function AiStatusBadge({ status }: { status: string | null }) {
     return (
       <Badge className="gap-1 bg-green-500/10 text-green-400 border-green-500/20">
         <CheckCircleIcon size={12} />
-        AI Selesai
+        AI Complete
       </Badge>
     );
   if (status === "PROCESSING" || status === "PENDING")
     return (
       <Badge variant="secondary" className="gap-1">
         <SparkleIcon size={12} className="animate-pulse" />
-        AI {status === "PENDING" ? "Menunggu" : "Memproses"}
+        AI {status === "PENDING" ? "Pending" : "Processing"}
       </Badge>
     );
   if (status === "FAILED")
     return (
       <Badge className="gap-1 bg-red-500/10 text-red-400 border-red-500/20">
         <XCircleIcon size={12} />
-        AI Gagal
+        AI Failed
       </Badge>
     );
   return <Badge variant="outline">-</Badge>;
@@ -97,11 +98,11 @@ function SoapFieldCard({
 
   return (
     <div className="rounded-lg border border-cultured bg-card">
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <h3 className="text-base font-semibold text-white">{FIELD_LABELS[field]}</h3>
+      <div className="flex items-center justify-between p-6">
+        <h3 className="text-base text-white flex items-center gap-2">{FIELD_LABELS[field]}</h3>
         {!editing && (
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             className="h-7 gap-1 text-xs"
             onClick={() => {
@@ -109,12 +110,12 @@ function SoapFieldCard({
               setEditing(true);
             }}
           >
-            <PencilSimpleIcon size={13} />
+            <PencilSimpleIcon size={11} />
             Edit
           </Button>
         )}
       </div>
-      <div className="px-5 pb-5">
+      <div className="p-6 pt-0">
         {editing ? (
           <div className="space-y-2">
             <textarea
@@ -126,16 +127,16 @@ function SoapFieldCard({
             <div className="flex gap-2">
               <Button size="sm" className="gap-1" onClick={handleSave} disabled={isSaving}>
                 <FloppyDiskIcon size={13} />
-                {isSaving ? "Menyimpan..." : "Simpan"}
+                {isSaving ? "Saving..." : "Save"}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={isSaving}>
-                Batal
+                Cancel
               </Button>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-accent whitespace-pre-wrap min-h-[48px]">
-            {value || <span className="italic opacity-50">Belum diisi</span>}
+          <p className="text-sm text-white/90 whitespace-pre-wrap min-h-[48px]">
+            {value || <span className="italic opacity-50">Not yet filled in</span>}
           </p>
         )}
       </div>
@@ -165,16 +166,16 @@ function NoteNotFound({ sessionId }: { sessionId: string }) {
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight text-white">Summary Results</h1>
-        <p className="text-sm text-accent">Hasil AI untuk sesi {sessionId} tidak tersedia.</p>
+        <p className="text-sm text-accent">AI results for session {sessionId} are not available.</p>
       </header>
       <div className="rounded-lg border border-cultured bg-card">
         <div className="px-6 pt-6 pb-2">
-          <h3 className="font-semibold text-white">Data Tidak Ditemukan</h3>
-          <p className="text-sm text-accent mt-1">SOAP note untuk sesi ini belum dibuat atau tidak dapat diakses.</p>
+          <h3 className="font-semibold text-white">Data Not Found</h3>
+          <p className="text-sm text-accent mt-1">The SOAP note for this session has not been created or cannot be accessed.</p>
         </div>
         <div className="px-6 pb-6 pt-4">
           <Link href="/doctor/history" className={cn(buttonVariants({ variant: "outline" }))}>
-            Kembali ke History
+            Back to History
           </Link>
         </div>
       </div>
@@ -200,64 +201,67 @@ function SummaryContent({
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Summary Results</h1>
-          <p className="text-sm text-accent">
-            Detail AI untuk sesi {note.consultationSessionId}.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/doctor/history" className={cn(buttonVariants({ variant: "outline" }))}>
-            Kembali ke History
-          </Link>
-          <Button variant="outline" className="gap-2">
-            <DownloadSimpleIcon size={16} />
-            Unduh PDF
-          </Button>
-          {note.isFinalized ? (
-            <Badge className="gap-1 px-3 py-1.5 bg-green-500/10 text-green-400 border-green-500/20 text-sm">
-              <CheckCircleIcon size={14} />
-              Sudah Dipublish ke Pasien
-            </Badge>
-          ) : (
-            <Button
-              className="gap-2"
-              onClick={onFinalize}
-              disabled={isFinalizing || note.aiStatus !== "SUCCESS"}
-              title={note.aiStatus !== "SUCCESS" ? "Tunggu AI selesai memproses" : undefined}
-            >
-              <CheckCircleIcon size={16} />
-              {isFinalizing ? "Memfinalisasi..." : "Finalize & Publish"}
+        <div className="">
+          <div className="flex items-center gap-2">
+            <ClipboardTextIcon size={16} className="text-primary" />
+            <h1 className="text-lg font-semibold tracking-tight text-white">Summary Results</h1>
+          </div>
+            <p className="text-sm text-accent">
+              AI details for session {note.consultationSessionId}.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/doctor/history" className={cn(buttonVariants({ variant: "outline" }))}>
+              Back to History
+            </Link>
+            <Button variant="outline" className="gap-2">
+              <DownloadSimpleIcon size={16} />
+              Download PDF
             </Button>
-          )}
-        </div>
+            {note.isFinalized ? (
+              <Badge className="gap-1 px-3 py-1.5 bg-green-500/10 text-green-400 border-green-500/20 text-sm">
+                <CheckCircleIcon size={14} />
+                Published to Patient
+              </Badge>
+            ) : (
+              <Button
+                className="gap-2"
+                onClick={onFinalize}
+                disabled={isFinalizing || note.aiStatus !== "SUCCESS"}
+                title={note.aiStatus !== "SUCCESS" ? "Wait for AI to finish processing" : undefined}
+              >
+                <CheckCircleIcon size={16} />
+                {isFinalizing ? "Finalizing..." : "Finalize & Publish"}
+              </Button>
+            )}
+          </div>
       </header>
 
       {note.aiStatus !== "SUCCESS" && (
         <div className="flex items-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-sm text-yellow-400">
           <WarningCircleIcon size={16} />
-          AI masih memproses hasil konsultasi. Tombol Finalize akan aktif setelah AI selesai.
+          AI is still processing the consultation results. The Finalize button will be active once AI has finished.
         </div>
       )}
 
       <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-lg border border-cultured bg-card">
-          <div className="px-6 pt-6 pb-4">
+        <div className="rounded-lg border border-cultured bg-card p-6">
+          <div className="mb-6">
             <h3 className="font-semibold text-white">Session Overview</h3>
-            <p className="text-sm text-accent mt-1">Ringkasan utama dan metadata konsultasi.</p>
+            <p className="text-sm text-accent ">Main consultation details</p>
           </div>
-          <div className="px-6 pb-6 space-y-4">
+          <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <AiStatusBadge status={note.aiStatus} />
-              <Badge variant="outline">
+              <Badge variant="secondary">
                 {note.isFinalized
                   ? `Finalized ${formatDateTime(note.finalizedAt)}`
-                  : "Belum difinalisasi"}
+                  : "Not yet finalized"}
               </Badge>
             </div>
             {note.summary && (
               <>
-                <div className="rounded-lg border border-cultured bg-card/50 p-4 text-sm text-white">
+                <div className="rounded-lg border border-cultured bg-card p-4 text-sm text-white/90">
                   {note.summary}
                 </div>
                 <div className="border-t border-cultured" />
@@ -265,29 +269,29 @@ function SummaryContent({
             )}
             <div className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Pasien</p>
+                <p className="text-xs text-accent">Patient</p>
                 <p className="font-medium text-white">{note.patientName ?? "-"}</p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Dokter</p>
+                <p className="text-xs text-accent">Doctor</p>
                 <p className="font-medium text-white">{note.doctorName ?? "-"}</p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Waktu Mulai</p>
+                <p className="text-xs text-accent">Start Time</p>
                 <p className="font-medium text-white">{formatDateTime(note.scheduledStartTime)}</p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Durasi</p>
+                <p className="text-xs text-accent">Duration</p>
                 <p className="font-medium text-white">
-                  {note.durationMinutes ? `${note.durationMinutes} menit` : "-"}
+                  {note.durationMinutes ? `${note.durationMinutes} min` : "-"}
                 </p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Mode Konsultasi</p>
+                <p className="text-xs text-accent">Consultation Mode</p>
                 <p className="font-medium text-white">{note.consultationMode ?? "-"}</p>
               </div>
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
-                <p className="text-xs text-accent">Status Sesi</p>
+                <p className="text-xs text-accent">Session Status</p>
                 <p className="font-medium text-white">{note.sessionStatus ?? "-"}</p>
               </div>
             </div>
@@ -295,17 +299,17 @@ function SummaryContent({
         </div>
 
         <div className="rounded-lg border border-cultured bg-card">
-          <div className="px-6 pt-6 pb-4">
+          <div className="px-6 pt-6 pb-6">
             <h3 className="font-semibold text-white">AI Info</h3>
-            <p className="text-sm text-accent mt-1">Status pemrosesan AI.</p>
+            <p className="text-sm text-accent mt-1">AI processing status.</p>
           </div>
           <div className="px-6 pb-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="rounded-lg border border-cultured p-2 text-primary">
+              <div className="rounded-lg border bg-blue-500/10 border border-blue-950 border-cultured p-2 text-primary">
                 <BrainIcon size={18} weight="duotone" />
               </div>
               <div className="space-y-1 text-sm">
-                <p className="font-medium text-white">Status Pemrosesan</p>
+                <p className="font-medium text-white">Processing Status</p>
                 <AiStatusBadge status={note.aiStatus} />
               </div>
             </div>
@@ -316,11 +320,11 @@ function SummaryContent({
                 <span className="font-medium text-white">{note.aiModel ?? "-"}</span>
               </div>
               <div className="flex justify-between rounded-lg border border-cultured bg-card/50 p-3">
-                <span className="text-accent">Transkripsi</span>
+                <span className="text-accent">Transcription</span>
                 <span className="font-medium text-white">{formatDateTime(note.transcribedAt)}</span>
               </div>
               <div className="flex justify-between rounded-lg border border-cultured bg-card/50 p-3">
-                <span className="text-accent">Ringkasan AI</span>
+                <span className="text-accent">AI Summary</span>
                 <span className="font-medium text-white">{formatDateTime(note.summarizedAt)}</span>
               </div>
             </div>
@@ -330,19 +334,21 @@ function SummaryContent({
                 {note.aiError}
               </div>
             )}
-            <div className="flex items-center gap-2 text-xs text-accent">
+            <div className="flex items-center gap-2 text-xs text-accent border rounded-lg p-2 border-yellow-950 bg-yellow-500/10 text-yellow-600">
               <WarningCircleIcon size={14} />
-              Review manual sebelum finalisasi.
+              Manual review required before finalization.
             </div>
           </div>
         </div>
       </section>
 
       <section>
-        <div className="mb-3 flex items-center gap-2">
-          <ClipboardTextIcon size={18} className="text-primary" />
-          <h2 className="text-lg font-semibold text-white">SOAP Note</h2>
-          <Badge variant="outline" className="text-xs">Hanya dokter yang dapat mengedit</Badge>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ArticleIcon size={18} className="text-primary" />
+            <h2 className="text-lg font-semibold text-white">SOAP Note</h2>
+          </div>
+          <Badge variant="destructive" className="text-xs"><WarningCircleIcon/> Only the doctor can edit</Badge>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           {soapFields.map((field) => (
@@ -361,23 +367,23 @@ function SummaryContent({
         <div className="rounded-lg border border-cultured bg-card">
           <div className="px-6 pt-6 pb-4">
             <h3 className="font-semibold text-white">Next Steps</h3>
-            <p className="text-sm text-accent mt-1">Checklist untuk tim medis.</p>
+            <p className="text-sm text-accent mt-1">Checklist for the medical team.</p>
           </div>
           <div className="px-6 pb-6 grid gap-3 text-sm sm:grid-cols-3">
             <div className="flex items-start gap-3 rounded-lg border border-cultured bg-card/50 p-3">
               <ShieldCheckIcon size={16} className="text-primary mt-0.5 shrink-0" />
-              <span className="text-accent">Verifikasi ulang riwayat alergi pasien.</span>
+              <span className="text-accent">Re-verify the patient's allergy history.</span>
             </div>
             <div className="flex items-start gap-3 rounded-lg border border-cultured bg-card/50 p-3">
               <HeartbeatIcon size={16} className="text-primary mt-0.5 shrink-0" />
-              <span className="text-accent">Jadwalkan follow-up sesuai rekomendasi.</span>
+              <span className="text-accent">Schedule a follow-up as recommended.</span>
             </div>
             <div className="flex items-start gap-3 rounded-lg border border-cultured bg-card/50 p-3">
               <FileTextIcon size={16} className="text-primary mt-0.5 shrink-0" />
               <span className="text-accent">
                 {note.isFinalized
-                  ? "Hasil sudah dapat dilihat oleh pasien."
-                  : "Finalize agar pasien dapat melihat hasil."}
+                  ? "Results are now visible to the patient."
+                  : "Finalize so the patient can view the results."}
               </span>
             </div>
           </div>

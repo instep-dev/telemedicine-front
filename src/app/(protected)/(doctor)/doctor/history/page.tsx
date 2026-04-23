@@ -444,7 +444,7 @@ const HistoryPage = () => {
                           onClick={() => router.push(`/doctor/summary-results/${item.consultationId}`)}
                           disabled={!item.consultationId}
                           className="flex items-center justify-center gap-x-2 rounded-lg border px-2 py-2 transition hover:scale-110 border-brand-900 bg-brand-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
-                          title="Lihat Summary"
+                          title="View Summary"
                         >
                           <BookOpenTextIcon className="h-4 w-4 text-brand-500" />
                         </button>
@@ -476,12 +476,12 @@ const HistoryPage = () => {
 
         <div className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-accent">
-            Showing <span className="font-medium accent text-white">{rows.length}</span> item(s) on page <span className="font-medium text-white">{page}</span>
+            Showing <span className="font-medium text-white">{rows.length}</span> item(s) on page <span className="font-medium text-white">{page}</span>
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <span className="text-sm text-accent">
-              Page <span className="font-medium text-white">{rows.length}</span> of <span className="font-medium text-black">{totalPages}</span>
+              Page <span className="font-medium text-white">{page}</span> of <span className="font-medium text-white">{totalPages}</span>
             </span>
 
             <div className="flex items-center gap-2">

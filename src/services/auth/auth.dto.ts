@@ -68,6 +68,7 @@ export type DoctorProfileDto = {
   email: string;
   phone: string;
   license: string;
+  profilePicture?: string | null;
 };
 
 export type AdminProfileDto = {
@@ -76,6 +77,7 @@ export type AdminProfileDto = {
   email: string;
   phone: string;
   adminId: string;
+  profilePicture?: string | null;
 };
 
 export type PatientProfileDto = {
@@ -84,6 +86,7 @@ export type PatientProfileDto = {
   email: string;
   phone: string;
   bornDate: string;
+  profilePicture?: string | null;
 };
 
 export type UpdateDoctorProfileDto = {
