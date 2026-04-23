@@ -7,8 +7,9 @@ import type { RegisterDto, UserRole } from "@/services/auth/auth.dto";
 import Input from "@/components/dashboard/form/input/InputField";
 import { Google } from "../reusable/Google";
 import { Microsoft } from "../reusable/Microsoft";
-import {  EyeIcon, EyeSlashIcon, LockIcon, UserIcon, PhoneIcon, IdentificationCardIcon, CalendarIcon, EnvelopeSimpleIcon } from "@phosphor-icons/react";
+import {  EyeIcon, EyeSlashIcon, LockIcon, UserIcon, PhoneIcon, IdentificationCardIcon, CalendarIcon, EnvelopeSimpleIcon, WarningIcon } from "@phosphor-icons/react";
 import { CircleNotchIcon } from "@phosphor-icons/react";
+import Notify from "../reusable/Notify";
 
 export default function RegistrationForm({ role }: { role: UserRole }) {
   const router = useRouter();
@@ -93,9 +94,9 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
         <div className="w-full h-[1px] bg-accent/30" />
       </div>
 
-      <div className="mt-6 flex items-center justify-between gap-x-3">
+      {/* <div className="mt-6 flex items-center justify-between gap-x-3"> */}
         <div>
-          <label className="block text-xs text-accent mb-2">Full Name</label>
+          <label className="block text-xs text-accent mb-2 mt-6">Full Name</label>
           <Input
             className="border w-full p-2 rounded-md"
             value={fullName}
@@ -105,7 +106,7 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
           />
         </div>
         <div>
-          <label className="block text-xs text-accent mb-2">Email</label>
+          <label className="block text-xs text-accent mb-2 mt-6">Email</label>
             <Input
               className="border w-full p-2 rounded-md"
               value={email}
@@ -115,11 +116,11 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
               icon={EnvelopeSimpleIcon}
             />
         </div>
-      </div>
+      {/* </div> */}
 
-      <div className="mt-6 flex items-center justify-between gap-x-3">
+      {/* <div className="mt-6 flex items-center justify-between gap-x-3"> */}
         <div>
-          <label className="block text-xs text-accent mb-2">Phone</label>
+          <label className="block text-xs text-accent mb-2 mt-6">Phone</label>
           <Input
             type="tel"
             inputMode="numeric"
@@ -133,7 +134,7 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
         <div>
           {role === "DOCTOR" && (
             <div>
-              <label className="block text-xs text-accent mb-2">License</label>
+              <label className="block text-xs text-accent mb-2 mt-6">License</label>
               <Input
                 className="border w-full p-2 rounded-md"
                 value={license}
@@ -146,7 +147,7 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
 
           {role === "ADMIN" && (
             <div>
-              <label className="block text-xs text-accent mb-2">Admin ID</label>
+              <label className="block text-xs text-accent mb-2 mt-6">Admin ID</label>
               <Input
                 className="border w-full p-2 rounded-md"
                 value={adminId}
@@ -159,7 +160,7 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
 
            {role === "PATIENT" && (
               <div>
-                <label className="block text-xs text-accent mb-2">Born Date</label>
+                <label className="block text-xs text-accent mb-2 mt-6">Born Date</label>
                 <Input
                   type="date"
                   className="border w-full p-2 rounded-md"
@@ -170,10 +171,10 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
               </div>
             )}
         </div>
-      </div>
+      {/* </div> */}
 
-      <div className="mt-6 flex items-center justify-between gap-x-3">
-        <div className="relative w-full">
+      {/* <div className="mt-6 flex items-center justify-between gap-x-3"> */}
+        <div className="relative w-full mt-6">
           <label className="block text-xs text-accent mb-2">Password</label>
           <Input
             className="border w-full p-2 rounded-md"
@@ -192,7 +193,7 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
             {showPassword ? <EyeSlashIcon size={18} /> : <EyeIcon size={18} />}
           </button>
         </div>
-        <div className="relative w-full">
+        <div className="relative w-full mt-6">
           <label className="block text-xs text-accent mb-2">Confirm Password</label>
           <Input
             className="border w-full p-2 rounded-md"
@@ -211,15 +212,15 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
             {showConfirmPassword ? <EyeSlashIcon size={18} /> : <EyeIcon size={18} />}
           </button>
         </div>
-      </div>
+      {/* </div> */}
 
-      {errorMessage && <p className="text-red-600 text-sm mt-4">{errorMessage}</p>}
+      {errorMessage && <Notify variant={false} error={errorMessage}/>}
 
       <button
-        className="border px-4 py-2 rounded-lg border border-cultured text-sm mt-6 w-full bg-gradient-primary mx-auto"
+        className="border px-4 py-2 rounded-lg border border-cultured text-sm mt-6 w-full bg-gradient-primary mx-auto flex items-center justify-center"
         disabled={register.isPending}
       >
-        {register.isPending ? <CircleNotchIcon className="animate-spin text-primary" /> : "Create Account"}
+        {register.isPending ? <CircleNotchIcon className="animate-spin text-white" /> : "Create Account"}
       </button>
     </form>
   );

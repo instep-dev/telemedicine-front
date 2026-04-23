@@ -112,7 +112,7 @@ export default function AdminSchedulePage() {
       const scheduledStart = new Date(`${modalDate}T${modalStartTime}:00+07:00`);
       const nowPlus3Min = new Date(Date.now() + 3 * 60 * 1000);
       if (scheduledStart < nowPlus3Min) {
-        setModalError("Jadwal konsultasi harus minimal 3 menit dari sekarang (WIB).");
+        setModalError("Consultation schedule must be at least 3 minutes from now (WIB).");
         return;
       }
     }
