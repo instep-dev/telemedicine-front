@@ -2,6 +2,12 @@ export type DoctorTokenBody = {
   sessionId: string;
 };
 
+export type NurseTokenBody = {
+  sessionId: string;
+};
+
+export type NurseTokenResponse = TokenResponse;
+
 export type PatientTokenBody = {
   sessionId: string;
   clientIp?: string | null;

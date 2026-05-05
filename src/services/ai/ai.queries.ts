@@ -1,13 +1,30 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { aiApi } from "./ai.api";
-import type { GetAiResultsParams } from "./ai.dto";
+import type { AiResultItemDto, GetAiResultsParams } from "./ai.dto";
 
 export const AI_RESULTS_REFETCH_INTERVAL_MS = 5000;
+
+export type AiSsePayload = {
+  type: "AI_STATUS_UPDATED";
+  noteId: string;
+  sessionId: string;
+  aiStatus: string;
+  aiError: string | null;
+  summary: string | null;
+  subjective: string | null;
+  objective: string | null;
+  assessment: string | null;
+  plan: string | null;
+  summarizedAt: string | null;
+  transcribedAt: string | null;
+};
 
 export function useAiResultsQuery(
   accessToken: string | null,
   params: GetAiResultsParams,
   enabled: boolean = true,
+  polling: boolean = false,
 ) {
   return useQuery({
     queryKey: ["ai-results", params],
@@ -17,8 +34,8 @@ export function useAiResultsQuery(
     },
     enabled: !!accessToken && enabled,
     retry: false,
-    refetchInterval: AI_RESULTS_REFETCH_INTERVAL_MS,
-    refetchIntervalInBackground: true,
+    refetchInterval: polling ? AI_RESULTS_REFETCH_INTERVAL_MS : false,
+    refetchIntervalInBackground: false,
     staleTime: 0,
   });
 }
@@ -55,9 +72,93 @@ export function useAiResultsWatcherQuery(
     enabled: !!accessToken && enabled,
     retry: false,
     refetchInterval: AI_RESULTS_REFETCH_INTERVAL_MS,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
     staleTime: 0,
   });
+}
+
+/**
+ * Opens a persistent SSE connection to /ai-results/stream.
+ * Calls onUpdate whenever an AI status change event arrives.
+ * Automatically reconnects with backoff if the connection drops.
+ */
+export function useAiStatusStream(
+  accessToken: string | null,
+  onUpdate: (payload: AiSsePayload) => void,
+) {
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    let cancelled = false;
+    let retryDelay = 2000;
+
+    const connect = async () => {
+      if (cancelled) return;
+
+      const baseUrl = process.env.NEXT_PUBLIC_NEST_API ?? "";
+      const url = `${baseUrl}/ai-results/stream`;
+      const controller = new AbortController();
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: "text/event-stream",
+          },
+          signal: controller.signal,
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error(`SSE response error: ${response.status}`);
+        }
+
+        // Connection succeeded, reset backoff
+        retryDelay = 2000;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done || cancelled) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            try {
+              const payload: AiSsePayload = JSON.parse(line.slice(5).trim());
+              if (payload.type === "AI_STATUS_UPDATED") {
+                onUpdateRef.current(payload);
+              }
+            } catch {
+              // malformed SSE line — skip
+            }
+          }
+        }
+      } catch (err: any) {
+        if (err?.name === "AbortError" || cancelled) return;
+      }
+
+      // Reconnect with backoff if not cancelled
+      if (!cancelled) {
+        setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 30000);
+      }
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
 }
 
 export function useAiRetryMutation(accessToken: string | null) {

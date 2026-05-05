@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 import flatpickr from "flatpickr";
@@ -13,11 +13,18 @@ type StatisticsChartSessionsProps = {
   loading?: boolean;
 };
 
-const buildDefaultRange = (): [Date, Date] => {
+const PRESET_DAYS = [7, 4, 3] as const;
+type PresetDays = (typeof PRESET_DAYS)[number];
+
+const buildCenteredRange = (days: number): [Date, Date] => {
   const today = new Date();
-  const start = new Date();
-  start.setDate(today.getDate() - 6);
-  return [start, today];
+  const before = Math.floor((days - 1) / 2);
+  const after = Math.ceil((days - 1) / 2);
+  const start = new Date(today);
+  start.setDate(today.getDate() - before);
+  const end = new Date(today);
+  end.setDate(today.getDate() + after);
+  return [start, end];
 };
 
 const toStartOfDay = (date: Date) =>
@@ -92,8 +99,23 @@ export default function StatisticsChartSessions({
   loading = false,
 }: StatisticsChartSessionsProps) {
   const datePickerRef = useRef<HTMLInputElement>(null);
-  const [range, setRange] = useState<[Date, Date]>(() => buildDefaultRange());
+  const fpRef = useRef<flatpickr.Instance | null>(null);
+  const [selectedDays, setSelectedDays] = useState<PresetDays | null>(7);
+  const [range, setRange] = useState<[Date, Date]>(() => buildCenteredRange(7));
   const initialRangeRef = useRef<[Date, Date]>(range);
+
+  const handlePreset = useCallback((days: PresetDays) => {
+    const [start, end] = buildCenteredRange(days);
+    setSelectedDays(days);
+    setRange([start, end]);
+    fpRef.current?.setDate([start, end], false);
+  }, []);
+
+  useEffect(() => {
+    if (window.innerWidth < 640) {
+      handlePreset(3);
+    }
+  }, [handlePreset]);
 
   useEffect(() => {
     if (!datePickerRef.current) return;
@@ -111,15 +133,17 @@ export default function StatisticsChartSessions({
         '<svg class="stroke-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 15L12.5 10L7.5 5" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
       onChange: (dates) => {
         if (dates.length === 2) {
+          setSelectedDays(null);
           setRange([dates[0], dates[1]]);
         }
       },
     });
 
+    fpRef.current = Array.isArray(fp) ? fp[0] : fp;
+
     return () => {
-      if (!Array.isArray(fp)) {
-        fp.destroy();
-      }
+      fpRef.current?.destroy();
+      fpRef.current = null;
     };
   }, []);
 
@@ -179,6 +203,9 @@ export default function StatisticsChartSessions({
       type: "line",
       toolbar: {
         show: false,
+      },
+      zoom: {
+        enabled: false,
       },
     },
     stroke: {
@@ -277,7 +304,7 @@ export default function StatisticsChartSessions({
   ];
 
   return (
-    <div className="rounded-lg border border-cultured bg-card px-5 pb-5 pt-5  sm:px-6 sm:pt-6">
+    <div className="rounded-lg border border-cultured bg-card px-5 pb-5 pt-5 sm:px-6 sm:pt-6">
       <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
         <div className="w-full">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
@@ -287,20 +314,36 @@ export default function StatisticsChartSessions({
             Daily calls and consultation hours
           </p>
         </div>
-        <div className="flex items-center sm:justify-end">
-          <div className="relative inline-flex items-center">
+        <div className="hidden sm:flex items-center gap-2 sm:justify-end">
+          <div className="flex items-center gap-2">
+            {PRESET_DAYS.map((days) => (
+              <button
+                key={days}
+                type="button"
+                onClick={() => handlePreset(days)}
+                className={`px-3 py-2 flex items-cenyter gap-x-1 flex items-center  rounded-md text-xs font-semibold border transition-all duration-200 ${
+                  selectedDays === days
+                    ? "bg-primary border-primary text-white"
+                    : "border-cultured bg-gradient-gray text-white hover:opacity-70"
+                }`}
+              >
+                {days}
+                <span>day</span>
+              </button>
+            ))}
+          </div>
+          <div className="relative flex items-center">
             <CalendarIcon weight="duotone" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:left-3 lg:top-1/2 lg:translate-x-0 lg:-translate-y-1/2 text-white pointer-events-none z-10" />
             <input
               ref={datePickerRef}
-              className="h-10 w-10 lg:w-40 lg:h-auto lg:pl-10 lg:pr-3 lg:py-2 rounded-md border border-cultured bg-gradient-gray text-white text-sm font-semibold text-transparent outline-none cursor-pointer"
-              placeholder="Select date range"
+              className="h-10 w-10 lg:w-42 lg:h-auto lg:pl-10 lg:pr-3 lg:py-2 rounded-md border border-cultured bg-gradient-gray text-white text-sm font-semibold text-transparent outline-none cursor-pointer"
             />
           </div>
         </div>
       </div>
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">
-        <div className="min-w-[1000px] xl:min-w-full">
+        <div className="min-w-[1000px] xl:min-w-full -ml-2">
           <Chart options={options} series={series} type="area" height={310} />
         </div>
       </div>

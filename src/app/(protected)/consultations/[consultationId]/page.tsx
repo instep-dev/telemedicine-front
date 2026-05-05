@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Video, { type RemoteParticipant, type RemoteTrack, type Room } from "twilio-video";
 import { authStore } from "@/services/auth/auth.store";
@@ -8,6 +8,7 @@ import { twilioApi } from "@/services/twillio/twilio.api";
 import {
   useDoctorTokenMutation,
   useEndCallMutation,
+  useNurseTokenMutation,
   usePatientTokenMutation,
 } from "@/services/twillio/twilio.queries";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@phosphor-icons/react";
 
 type DeviceOption = { deviceId: string; label: string };
+type RemoteParticipantEntry = { sid: string; identity: string };
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -40,6 +42,7 @@ export default function ConsultationSessionPage() {
 
   const doctorTokenMutation = useDoctorTokenMutation(accessToken);
   const patientTokenMutation = usePatientTokenMutation(accessToken);
+  const nurseTokenMutation = useNurseTokenMutation(accessToken);
   const endCallMutation = useEndCallMutation(accessToken);
 
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -60,12 +63,12 @@ export default function ConsultationSessionPage() {
   const [showAudioMenu, setShowAudioMenu] = useState(false);
   const [showVideoMenu, setShowVideoMenu] = useState(false);
 
-  // Remote participant name
-  const [remoteName, setRemoteName] = useState<string>("");
+  // Multi-party remote participants
+  const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipantEntry[]>([]);
 
   const roomRef = useRef<Room | null>(null);
   const localRef = useRef<HTMLDivElement | null>(null);
-  const remoteRef = useRef<HTMLDivElement | null>(null);
+  const remoteContainersRef = useRef<Map<string, HTMLElement>>(new Map());
   const audioElsRef = useRef<HTMLElement[]>([]);
   const isCleaningRef = useRef(false);
   const hasStartedRef = useRef(false);
@@ -74,13 +77,15 @@ export default function ConsultationSessionPage() {
 
   const isDoctor = user?.role === "DOCTOR";
   const isPatient = user?.role === "PATIENT";
+  const isNurse = user?.role === "NURSE";
   const isVoiceMode = consultationMode === "VOICE";
 
   const pageTitle = useMemo(() => {
     if (isDoctor) return "Doctor Room";
     if (isPatient) return "Patient Room";
+    if (isNurse) return "Nurse Room";
     return "Consultation Room";
-  }, [isDoctor, isPatient]);
+  }, [isDoctor, isPatient, isNurse]);
 
   // Timer
   useEffect(() => {
@@ -121,11 +126,13 @@ export default function ConsultationSessionPage() {
     return () => document.removeEventListener("mousedown", close);
   }, [showAudioMenu, showVideoMenu]);
 
-  // ── existing helpers ─────────────────────────────────────────────────────────
+  // ── helpers ──────────────────────────────────────────────────────────────────
 
   function clearContainers() {
     if (localRef.current) localRef.current.innerHTML = "";
-    if (remoteRef.current) remoteRef.current.innerHTML = "";
+    remoteContainersRef.current.forEach((container) => {
+      container.innerHTML = "";
+    });
   }
 
   function clearAudioEls() {
@@ -211,6 +218,7 @@ export default function ConsultationSessionPage() {
       clearContainers();
       clearAudioEls();
       setConnected(false);
+      setRemoteParticipants([]);
       isCleaningRef.current = false;
     }
   }
@@ -244,44 +252,68 @@ export default function ConsultationSessionPage() {
     });
   }
 
+  function attachTrackToParticipant(participantSid: string, track: any) {
+    if (isCleaningRef.current) return;
+    if (track.kind === "video") {
+      const container = remoteContainersRef.current.get(participantSid);
+      if (container) attachRemoteVideo(track, container);
+    } else if (track.kind === "audio") {
+      const audioEl = track.attach();
+      (audioEl as any).style.display = "none";
+      document.body.appendChild(audioEl);
+      audioElsRef.current.push(audioEl);
+    }
+  }
+
+  // Ref callback for each remote participant's container div.
+  // When the element mounts, attaches any already-subscribed video tracks.
+  const setRemoteContainerRef = useCallback((sid: string, el: HTMLElement | null) => {
+    if (el) {
+      remoteContainersRef.current.set(sid, el);
+      const room = roomRef.current;
+      if (room) {
+        const participant = room.participants.get(sid);
+        if (participant) {
+          participant.tracks.forEach((pub: any) => {
+            if (pub.isSubscribed && pub.track && pub.track.kind === "video") {
+              attachRemoteVideo(pub.track, el);
+            }
+          });
+        }
+      }
+    } else {
+      remoteContainersRef.current.delete(sid);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function handleRemoteParticipant(participant: RemoteParticipant) {
     if (isCleaningRef.current) return;
-    setRemoteName(participant.identity ?? "");
+
+    setRemoteParticipants((prev) => {
+      if (prev.some((p) => p.sid === participant.sid)) return prev;
+      return [...prev, { sid: participant.sid, identity: participant.identity ?? "" }];
+    });
 
     participant.tracks.forEach((pub: any) => {
       if (isCleaningRef.current) return;
       if (pub.isSubscribed && pub.track) {
-        const track: any = pub.track as RemoteTrack;
-        if (track.kind === "video") {
-          if (!remoteRef.current) return;
-          attachRemoteVideo(track, remoteRef.current);
-        } else if (track.kind === "audio") {
-          const audioEl = track.attach();
-          (audioEl as any).style.display = "none";
-          document.body.appendChild(audioEl);
-          audioElsRef.current.push(audioEl);
-        }
+        attachTrackToParticipant(participant.sid, pub.track as RemoteTrack);
       }
     });
 
     participant.on("trackSubscribed", (track: RemoteTrack) => {
       if (isCleaningRef.current) return;
-      const t: any = track;
-      if (t.kind === "video") {
-        if (!remoteRef.current) return;
-        attachRemoteVideo(t, remoteRef.current);
-      } else if (t.kind === "audio") {
-        const audioEl = (t as any).attach();
-        (audioEl as any).style.display = "none";
-        document.body.appendChild(audioEl);
-        audioElsRef.current.push(audioEl);
-      }
+      attachTrackToParticipant(participant.sid, track as any);
     });
 
     participant.on("trackUnsubscribed", (track: RemoteTrack) => {
       if (isCleaningRef.current) return;
       const t: any = track;
-      if (t.kind === "video" && remoteRef.current) remoteRef.current.innerHTML = "";
+      if (t.kind === "video") {
+        const container = remoteContainersRef.current.get(participant.sid);
+        if (container) container.innerHTML = "";
+      }
     });
   }
 
@@ -289,35 +321,74 @@ export default function ConsultationSessionPage() {
     if (!sessionId || !accessToken || !user) return;
     if (isCleaningRef.current) return;
     if (roomRef.current) return;
-    if (doctorTokenMutation.isPending || patientTokenMutation.isPending) return;
+    if (doctorTokenMutation.isPending || patientTokenMutation.isPending || nurseTokenMutation.isPending) return;
     setErrMsg(null);
     try {
       const tokenData = isDoctor
         ? await doctorTokenMutation.mutateAsync({ sessionId })
+        : isNurse
+        ? await nurseTokenMutation.mutateAsync({ sessionId })
         : await patientTokenMutation.mutateAsync({ sessionId });
       const mode = tokenData.consultationMode ?? "VIDEO";
       setConsultationMode(mode);
-      const room = await Video.connect(tokenData.token, {
-        name: tokenData.roomName,
-        audio: true,
-        video: mode === "VIDEO",
-        receiveTranscriptions: isDoctor,
-      });
+
+      let room: Room;
+      let actuallyVideo = mode === "VIDEO";
+      try {
+        room = await Video.connect(tokenData.token, {
+          name: tokenData.roomName,
+          audio: true,
+          video: actuallyVideo,
+          receiveTranscriptions: isDoctor,
+        });
+      } catch (mediaErr: any) {
+        const msg: string = mediaErr?.message ?? "";
+        const isVideoError =
+          actuallyVideo &&
+          (msg.toLowerCase().includes("video") ||
+            msg.toLowerCase().includes("camera") ||
+            msg.toLowerCase().includes("source") ||
+            msg.toLowerCase().includes("notreadable") ||
+            msg.toLowerCase().includes("notallowed") ||
+            msg.toLowerCase().includes("permission"));
+        if (isVideoError) {
+          actuallyVideo = false;
+          setConsultationMode("VOICE");
+          room = await Video.connect(tokenData.token, {
+            name: tokenData.roomName,
+            audio: true,
+            video: false,
+            receiveTranscriptions: isDoctor,
+          });
+        } else {
+          throw mediaErr;
+        }
+      }
+
       roomRef.current = room;
       setConnected(true);
-      setMicOn(true);
-      setCamOn(mode === "VIDEO");
-      if (mode === "VIDEO") attachLocalVideo(room);
+      // Nurse joins with mic muted by default
+      const startMuted = isNurse;
+      setMicOn(!startMuted);
+      if (startMuted) {
+        room.localParticipant.audioTracks.forEach((pub: any) => {
+          try { pub.track?.disable(); } catch {}
+        });
+      }
+      setCamOn(actuallyVideo);
+      if (actuallyVideo) attachLocalVideo(room);
       if (isDoctor) room.on("transcription", handleTranscriptionEvent);
       room.participants.forEach((p) => handleRemoteParticipant(p));
       room.on("participantConnected", (p) => handleRemoteParticipant(p));
-      room.on("participantDisconnected", () => {
-        if (remoteRef.current) remoteRef.current.innerHTML = "";
-        setRemoteName("");
+      room.on("participantDisconnected", (p: RemoteParticipant) => {
+        if (isCleaningRef.current) return;
+        remoteContainersRef.current.delete(p.sid);
+        setRemoteParticipants((prev) => prev.filter((x) => x.sid !== p.sid));
       });
       room.on("disconnected", () => {
         cleanupRoom();
         if (isPatient) router.replace("/patient/schedule");
+        if (isNurse) router.replace("/nurse/schedule");
       });
     } catch (err: any) {
       setErrMsg(err?.response?.data?.message ?? err?.message ?? "Failed to join session");
@@ -327,8 +398,8 @@ export default function ConsultationSessionPage() {
 
   useEffect(() => {
     if (!sessionId || !accessToken || !user) return;
-    if (!(isDoctor || isPatient)) {
-      setErrMsg("Only doctors or patients are allowed to join a consultation.");
+    if (!(isDoctor || isPatient || isNurse)) {
+      setErrMsg("Only doctors, patients, or nurses are allowed to join a consultation.");
       return;
     }
     if (hasStartedRef.current) return;
@@ -340,7 +411,7 @@ export default function ConsultationSessionPage() {
       hasStartedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, accessToken, user?.role]);
+  }, [sessionId, accessToken, user?.role, isNurse]);
 
   function toggleMic() {
     const room = roomRef.current;
@@ -409,6 +480,8 @@ export default function ConsultationSessionPage() {
   }
 
   const isConnecting = !connected && !errMsg;
+  const hasRemote = remoteParticipants.length > 0;
+  const isSplitView = remoteParticipants.length >= 2;
 
   // ── UI ───────────────────────────────────────────────────────────────────────
 
@@ -418,17 +491,37 @@ export default function ConsultationSessionPage() {
       {/* ═══ MAIN VIDEO AREA ═══ */}
       <div className="flex-1 relative overflow-hidden bg-[#3c4043]">
 
-        {/* Remote video fill */}
-        <div ref={remoteRef} className="absolute inset-0" />
+        {/* Remote videos — 1 participant: fullscreen; 2 participants: side-by-side */}
+        <div className={`absolute inset-0 flex ${isSplitView ? "flex-row divide-x divide-white/10" : ""}`}>
+          {remoteParticipants.map(({ sid, identity }) => (
+            <div
+              key={sid}
+              className={isSplitView ? "relative flex-1 overflow-hidden" : "absolute inset-0"}
+            >
+              <div
+                ref={(el) => setRemoteContainerRef(sid, el as HTMLElement | null)}
+                className="w-full h-full"
+              />
+              {/* Per-participant name label */}
+              <div className="absolute bottom-4 left-4 pointer-events-none">
+                <span className="bg-black/50 backdrop-blur-sm text-white/90 text-xs px-2.5 py-1 rounded-lg">
+                  {identity}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
 
-        {/* Remote placeholder */}
-        {(!connected || isVoiceMode || !remoteName) && (
+        {/* Placeholder when no remote participants or voice mode */}
+        {(!connected || isVoiceMode || !hasRemote) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">
             <div className="w-28 h-28 rounded-full bg-[#5f6368] flex items-center justify-center shadow-xl">
               <UserCircleIcon size={64} weight="thin" className="text-white/40" />
             </div>
-            {remoteName && (
-              <p className="text-white/70 text-base font-medium">{remoteName}</p>
+            {isVoiceMode && hasRemote && (
+              <p className="text-white/70 text-base font-medium">
+                {remoteParticipants.map((p) => p.identity).join(", ")}
+              </p>
             )}
             <p className="text-white/30 text-sm">
               {!connected
@@ -449,21 +542,12 @@ export default function ConsultationSessionPage() {
           </div>
         )}
 
-        {/* Error toast */}
+        {/* Error / warning toast */}
         {errMsg && (
           <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20">
             <div className="bg-red-600/90 backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-xl shadow-2xl border border-red-500/30">
               {errMsg}
             </div>
-          </div>
-        )}
-
-        {/* Remote name label (bottom-left of video) */}
-        {connected && remoteName && (
-          <div className="absolute bottom-4 left-4 pointer-events-none">
-            <span className="bg-black/50 backdrop-blur-sm text-white/90 text-xs px-2.5 py-1 rounded-lg">
-              {remoteName}
-            </span>
           </div>
         )}
 
@@ -631,7 +715,7 @@ export default function ConsultationSessionPage() {
             onClick={
               isDoctor
                 ? endCall
-                : () => { cleanupRoom(); router.replace("/patient/schedule"); }
+                : () => { cleanupRoom(); router.replace(isNurse ? "/nurse/schedule" : "/patient/schedule"); }
             }
             disabled={isEnding}
             title={isDoctor ? "End call for everyone" : "Leave call"}

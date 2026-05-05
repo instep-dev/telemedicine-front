@@ -3,8 +3,10 @@ export type SoapNoteDto = {
   consultationSessionId: string;
   doctorId: string;
   patientId: string;
+  nurseId: string | null;
   doctorName: string | null;
   patientName: string | null;
+  nurseName: string | null;
   scheduledStartTime: string | null;
   scheduledEndTime: string | null;
   durationMinutes: number | null;

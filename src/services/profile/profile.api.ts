@@ -3,9 +3,11 @@ import type {
   DoctorProfileDto,
   AdminProfileDto,
   PatientProfileDto,
+  NurseProfileDto,
   UpdateDoctorProfileDto,
   UpdateAdminProfileDto,
   UpdatePatientProfileDto,
+  UpdateNurseProfileDto,
 } from "@/services/auth/auth.dto";
 
 export interface ChangeEmailRequest {
@@ -60,6 +62,16 @@ const roleEndpoints = {
     setNewPassword: "/profile/patient/set-new-password",
     uploadPicture: "/profile/patient/upload-picture",
   },
+  nurse: {
+    get: "/profile/nurse",
+    update: "/profile/nurse",
+    changeEmail: "/profile/nurse/change-email",
+    confirmEmail: "/profile/nurse/confirm-email-change",
+    forgotPassword: "/profile/nurse/forgot-password",
+    verifyResetCode: "/profile/nurse/verify-reset-code",
+    setNewPassword: "/profile/nurse/set-new-password",
+    uploadPicture: "/profile/nurse/upload-picture",
+  },
 };
 
 export const profileApi = {
@@ -79,6 +91,11 @@ export const profileApi = {
     return res.data;
   },
 
+  async getNurseProfile(): Promise<NurseProfileDto> {
+    const res = await http.get<NurseProfileDto>(roleEndpoints.nurse.get);
+    return res.data;
+  },
+
   // UPDATE PROFILES
   async updateDoctorProfile(payload: UpdateDoctorProfileDto): Promise<DoctorProfileDto> {
     const res = await http.put<DoctorProfileDto>(roleEndpoints.doctor.update, payload);
@@ -95,8 +112,13 @@ export const profileApi = {
     return res.data;
   },
 
+  async updateNurseProfile(payload: UpdateNurseProfileDto): Promise<NurseProfileDto> {
+    const res = await http.put<NurseProfileDto>(roleEndpoints.nurse.update, payload);
+    return res.data;
+  },
+
   // EMAIL CHANGE FLOW
-  async requestEmailChange(role: "doctor" | "admin" | "patient", payload: ChangeEmailRequest): Promise<ProfileOperationResponse> {
+  async requestEmailChange(role: "doctor" | "admin" | "patient" | "nurse", payload: ChangeEmailRequest): Promise<ProfileOperationResponse> {
     const res = await http.post<ProfileOperationResponse>(
       roleEndpoints[role].changeEmail,
       payload,
@@ -104,7 +126,7 @@ export const profileApi = {
     return res.data;
   },
 
-  async confirmEmailChange(role: "doctor" | "admin" | "patient", payload: ConfirmEmailChangeRequest): Promise<ProfileOperationResponse> {
+  async confirmEmailChange(role: "doctor" | "admin" | "patient" | "nurse", payload: ConfirmEmailChangeRequest): Promise<ProfileOperationResponse> {
     const res = await http.post<ProfileOperationResponse>(
       roleEndpoints[role].confirmEmail,
       payload,
@@ -113,7 +135,7 @@ export const profileApi = {
   },
 
   // PASSWORD RESET FLOW
-  async verifyResetCode(role: "doctor" | "admin" | "patient", payload: { code: string }): Promise<ProfileOperationResponse> {
+  async verifyResetCode(role: "doctor" | "admin" | "patient" | "nurse", payload: { code: string }): Promise<ProfileOperationResponse> {
     const res = await http.post<ProfileOperationResponse>(
       roleEndpoints[role].verifyResetCode,
       payload,
@@ -121,14 +143,14 @@ export const profileApi = {
     return res.data;
   },
 
-  async requestPasswordReset(role: "doctor" | "admin" | "patient"): Promise<ProfileOperationResponse> {
+  async requestPasswordReset(role: "doctor" | "admin" | "patient" | "nurse"): Promise<ProfileOperationResponse> {
     const res = await http.post<ProfileOperationResponse>(
       roleEndpoints[role].forgotPassword,
     );
     return res.data;
   },
 
-  async setNewPassword(role: "doctor" | "admin" | "patient", payload: SetNewPasswordRequest): Promise<ProfileOperationResponse> {
+  async setNewPassword(role: "doctor" | "admin" | "patient" | "nurse", payload: SetNewPasswordRequest): Promise<ProfileOperationResponse> {
     const res = await http.post<ProfileOperationResponse>(
       roleEndpoints[role].setNewPassword,
       payload,
@@ -137,7 +159,7 @@ export const profileApi = {
   },
 
   // PROFILE PICTURE UPLOAD
-  async uploadProfilePicture(role: "doctor" | "admin" | "patient", file: File): Promise<ProfileOperationResponse> {
+  async uploadProfilePicture(role: "doctor" | "admin" | "patient" | "nurse", file: File): Promise<ProfileOperationResponse> {
     const formData = new FormData();
     formData.append("file", file);
 

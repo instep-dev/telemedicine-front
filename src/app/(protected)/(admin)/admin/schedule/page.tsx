@@ -17,6 +17,7 @@ import type {
   ConsultationMode,
   ConsultationSessionDto,
   DoctorOptionDto,
+  NurseOptionDto,
   PatientOptionDto,
   SessionType,
 } from "@/services/consultations/consultations.dto";
@@ -56,6 +57,7 @@ export default function AdminSchedulePage() {
 
   const [doctorOptions, setDoctorOptions] = useState<DoctorOptionDto[]>([]);
   const [patientOptions, setPatientOptions] = useState<PatientOptionDto[]>([]);
+  const [nurseOptions, setNurseOptions] = useState<NurseOptionDto[]>([]);
   const [lookupLoaded, setLookupLoaded] = useState(false);
 
   useEffect(() => {
@@ -63,18 +65,44 @@ export default function AdminSchedulePage() {
     Promise.all([
       consultationsApi.listDoctors(accessToken),
       consultationsApi.listPatients(accessToken),
+      consultationsApi.listNurses(accessToken),
     ])
-      .then(([docs, pats]) => {
+      .then(([docs, pats, nurses]) => {
         setDoctorOptions(docs);
         setPatientOptions(pats);
+        setNurseOptions(nurses);
         setLookupLoaded(true);
       })
       .catch(() => {});
   }, [accessToken, lookupLoaded]);
 
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (modalOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+    } else {
+      const top = document.body.style.top;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      if (top) window.scrollTo(0, parseInt(top) * -1);
+    }
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
   const [modalDoctorId, setModalDoctorId] = useState("");
   const [modalPatientId, setModalPatientId] = useState("");
+  const [modalNurseId, setModalNurseId] = useState("");
   const [modalSessionType, setModalSessionType] = useState<SessionType>("SCHEDULED");
   const [modalMode, setModalMode] = useState<ConsultationMode>("VIDEO");
   const [modalDate, setModalDate] = useState(toDateInput(new Date()));
@@ -88,6 +116,7 @@ export default function AdminSchedulePage() {
     (day?: Date, hour?: number) => {
       setModalDoctorId(doctorOptions[0]?.userId ?? "");
       setModalPatientId(patientOptions[0]?.userId ?? "");
+      setModalNurseId("");
       setModalSessionType("SCHEDULED");
       setModalMode("VIDEO");
       setModalDate(toDateInput(day ?? new Date()));
@@ -120,6 +149,7 @@ export default function AdminSchedulePage() {
       await createMutation.mutateAsync({
         doctorId: modalDoctorId,
         patientId: modalPatientId,
+        nurseId: modalNurseId || undefined,
         sessionType: modalSessionType,
         consultationMode: modalMode,
         ...(modalSessionType === "SCHEDULED"
@@ -161,12 +191,12 @@ export default function AdminSchedulePage() {
       />
 
       {/* Create Session Modal */}
-      <div className={`fixed min-h-screen py-20 flex items-center justify-center inset-0 z-[9999999] transition-all duration-300 ${modalOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <div className={`fixed min-h-screen py-4 sm:py-20 flex items-center justify-center inset-0 z-[9999999] transition-all duration-300 ${modalOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
         <div
           className={`absolute inset-0 transition-all duration-300 ${modalOpen ? "bg-background/20 backdrop-blur-[10px]" : "bg-background/0 backdrop-blur-none"}`}
           onClick={() => setModalOpen(false)}
         />
-        <div className={`${modalOpen ? "scale-100 opacity-100" : "scale-60 opacity-0"} transition-all duration-300 w-[450px] relative bg-card border border-cultured rounded-lg flex flex-col shadow-2xl`}>
+        <div className={`${modalOpen ? "scale-100 opacity-100" : "scale-60 opacity-0"} transition-all duration-300 w-[calc(100%-2rem)] sm:w-[450px] max-w-[450px] max-h-[88vh] sm:max-h-[85vh] relative bg-card border border-cultured rounded-lg flex flex-col shadow-2xl`}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-cultured">
             <h3 className="font-semibold text-sm">{modalSessionType === "INSTANT" ? "Instant Consultation" : "Scheduled Consultation"}</h3>
             <button
@@ -177,7 +207,7 @@ export default function AdminSchedulePage() {
             </button>
           </div>
 
-          <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-5 space-y-5">
+          <form onSubmit={handleCreate} className="flex-1 overflow-y-auto overscroll-contain p-5 space-y-5">
             <div>
               <label className="block text-xs text-accent mb-2">Session Type</label>
               <div className="grid grid-cols-2 gap-2 p-1 border border-cultured rounded-lg">
@@ -243,6 +273,20 @@ export default function AdminSchedulePage() {
               </select>
             </div>
 
+            <div>
+              <label className="block text-xs text-accent mb-2">Nurse (Optional)</label>
+              <select
+                value={modalNurseId}
+                onChange={(e) => setModalNurseId(e.target.value)}
+                className="w-full bg-card border border-cultured rounded-lg h-11 px-4 text-sm text-white focus:outline-none focus:border-white/30"
+              >
+                <option value="">No Nurse Assigned</option>
+                {nurseOptions.map((n) => (
+                  <option key={n.userId} value={n.userId}>{n.fullName} ({n.nurseId})</option>
+                ))}
+              </select>
+            </div>
+
             {modalSessionType === "SCHEDULED" && (
               <>
                 <div>
@@ -300,12 +344,12 @@ export default function AdminSchedulePage() {
       </div>
 
       {/* Session Detail Panel */}
-      <div className={`fixed min-h-screen py-20 flex items-center justify-center inset-0 z-[99999] transition-all duration-300 ${detail ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <div className={`fixed min-h-screen py-4 sm:py-20 flex items-center justify-center inset-0 z-[99999] transition-all duration-300 ${detail ? "pointer-events-auto" : "pointer-events-none"}`}>
         <div
           className={`absolute inset-0 transition-all duration-300 ${detail ? "bg-background/20 backdrop-blur-[10px]" : "bg-background/0 backdrop-blur-none"}`}
           onClick={() => setDetail(null)}
         />
-        <div className={`${detail ? "scale-100 opacity-100" : "scale-75 opacity-0"} transition-all duration-300 w-[450px] relative bg-card border border-cultured rounded-lg flex flex-col shadow-2xl`}>
+        <div className={`${detail ? "scale-100 opacity-100" : "scale-75 opacity-0"} transition-all duration-300 w-[calc(100%-2rem)] sm:w-[450px] max-w-[450px] relative bg-card border border-cultured rounded-lg flex flex-col shadow-2xl`}>
           {detail && (
             <>
               <div className="flex items-center justify-between px-5 py-4 border-b border-cultured">
@@ -326,6 +370,9 @@ export default function AdminSchedulePage() {
                 <div className="space-y-3 pt-1">
                   <DetailRow label="Doctor" value={detail.doctorName ?? "-"} />
                   <DetailRow label="Patient" value={detail.patientName ?? "-"} />
+                  {detail.nurseId && (
+                    <DetailRow label="Nurse" value={detail.nurseName ?? "-"} />
+                  )}
                   <DetailRow label="Mode" value={detail.consultationMode} />
                   <DetailRow label="Type" value={detail.sessionType} />
                   <DetailRow
@@ -371,6 +418,15 @@ export default function AdminSchedulePage() {
                       Patient · {detail.patientJoinState}
                     </span>
                   </div>
+                  {detail.nurseId && detail.nurseJoinState !== "NONE" && (
+                    <span className={`w-full text-center text-xs py-1.5 rounded border flex justify-center ${
+                      detail.nurseJoinState === "JOINED"
+                        ? "border-emerald-800 bg-emerald-500/10 text-emerald-400"
+                        : "border-cultured text-accent"
+                    }`}>
+                      Nurse · {detail.nurseJoinState}
+                    </span>
+                  )}
                 </div>
               </div>
             </>

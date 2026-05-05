@@ -22,6 +22,7 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [license, setLicense] = useState("");
   const [adminId, setAdminId] = useState("");
+  const [nurseId, setNurseId] = useState("");
   const [bornDate, setBornDate] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +52,7 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
       confirmPassword,
       license: role === "DOCTOR" ? license : undefined,
       adminId: role === "ADMIN" ? adminId : undefined,
+      nurseId: role === "NURSE" ? nurseId : undefined,
       bornDate: role === "PATIENT" ? bornDate : undefined,
     };
 
@@ -157,6 +159,19 @@ export default function RegistrationForm({ role }: { role: UserRole }) {
               />
             </div>
           )}
+
+           {role === "NURSE" && (
+              <div>
+                <label className="block text-xs text-accent mb-2 mt-6">Nurse ID</label>
+                <Input
+                  className="border w-full p-2 rounded-md"
+                  value={nurseId}
+                  onChange={(e) => setNurseId(e.target.value)}
+                  placeholder="NUR-ICU-005"
+                  icon={IdentificationCardIcon}
+                />
+              </div>
+            )}
 
            {role === "PATIENT" && (
               <div>

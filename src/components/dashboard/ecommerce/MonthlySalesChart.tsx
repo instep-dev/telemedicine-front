@@ -38,9 +38,7 @@ export default function MonthlyConsultationChart({
     );
   }
   const options: ApexOptions = {
-    colors: ["#0059ff"],
     chart: {
-      // fontFamily: "Outfit, sans-serif",
       type: "bar",
       height: 180,
       toolbar: {
@@ -86,7 +84,7 @@ export default function MonthlyConsultationChart({
       },
       labels: {
         style: {
-          colors: "#FFFFFF",
+          colors: "#ffffff80",
         },
       },
     },
@@ -99,8 +97,14 @@ export default function MonthlyConsultationChart({
       title: {
         text: undefined,
       },
+      labels: {
+        style: {
+          colors: "#ffffff",
+        },
+      },
     },
     grid: {
+      borderColor: "#393939",
       yaxis: {
         lines: {
           show: true,
@@ -109,8 +113,8 @@ export default function MonthlyConsultationChart({
     },
     fill: {
       opacity: 1,
+      colors: ["#0059ff"],
     },
-
     tooltip: {
       x: {
         show: false,
@@ -133,15 +137,6 @@ export default function MonthlyConsultationChart({
       data: normalizedCounts,
     },
   ];
-  const [isOpen, setIsOpen] = useState(false);
-
-  function toggleDropdown() {
-    setIsOpen(!isOpen);
-  }
-
-  function closeDropdown() {
-    setIsOpen(false);
-  }
 
   return (
     <div className="overflow-hidden rounded-lg border border-cultured bg-card px-5 pt-5 sm:px-6 sm:pt-6">
@@ -154,36 +149,10 @@ export default function MonthlyConsultationChart({
             Your monthly total consultation
           </p>
         </div>
-
-        <div className="relative inline-block">
-          <button onClick={toggleDropdown} className="dropdown-toggle">
-            <DotsThreeOutlineVerticalIcon weight="bold" className="text-accent hover:text-white" />
-          </button>
-          <Dropdown
-            isOpen={isOpen}
-            onClose={closeDropdown}
-            className="w-40 p-2"
-          >
-            <DropdownItem
-              variant={true}
-              onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-            >
-              View More
-            </DropdownItem>
-            <DropdownItem
-              variant={false}
-              onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-            >
-              Delete
-            </DropdownItem>
-          </Dropdown>
-        </div>
       </div>
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">
-        <div className="-ml-5 min-w-[650px] xl:min-w-full pl-2">
+        <div className="-ml-8 min-w-[650px] xl:min-w-full pl-2">
           <ReactApexChart
             options={options}
             series={series}

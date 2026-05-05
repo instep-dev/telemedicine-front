@@ -3,19 +3,14 @@
 import { ApexOptions } from "apexcharts";
 
 import dynamic from "next/dynamic";
-import { Dropdown } from "../ui/dropdown/Dropdown";
-import Badge from "../ui/badge/Badge";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   CircleNotchIcon,
-  DotsThreeOutlineVerticalIcon,
   MinusIcon,
   SealCheckIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import { useState } from "react";
-import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import DataEmpty from "@/components/reusable/DataEmpty";
 
 
@@ -56,13 +51,17 @@ export default function MonthlyTarget({
   const safeTarget = Math.max(0, target);
   const progressRaw = safeTarget > 0 ? (currentMonthCalls / safeTarget) * 100 : 0;
   const progressPercent = Math.min(100, Number(progressRaw.toFixed(2)));
-  const progressLabel = Math.round(progressRaw);
+  const progressLabel = Math.min(100, Math.round(progressRaw));
 
   const diff = currentMonthCalls - safeTarget;
   const diffPercent = safeTarget > 0 ? (diff / safeTarget) * 100 : 0;
-  const diffLabel = `${diffPercent >= 0 ? "+" : "-"}${Math.abs(
-    Math.round(diffPercent),
-  )}%`;
+  const diffLabel = `${diffPercent >= 0 ? "+" : "-"}${Math.abs(Math.round(diffPercent))}%`;
+
+  const getBadgeClass = (pct: number) => {
+    if (pct <= 29) return "bg-red-500/10 text-red-600 border border-red-900";
+    if (pct <= 60) return "bg-yellow-500/10 text-yellow-600 border border-yellow-950";
+    return "bg-success-500/10 text-success-600 border border-success-950";
+  };
 
   const renderTrendIcon = (delta: number) => {
     if (delta > 0) {
@@ -76,7 +75,6 @@ export default function MonthlyTarget({
 
   const series = [progressPercent];
   const options: ApexOptions = {
-    colors: ["#465FFF"],
     chart: {
       fontFamily: "Outfit, sans-serif",
       type: "radialBar",
@@ -93,9 +91,9 @@ export default function MonthlyTarget({
           size: "80%",
         },
         track: {
-          background: "#E4E7EC",
+          background: "#0a0a0a",
           strokeWidth: "100%",
-          margin: 5, // margin is in pixels
+          margin: 5, 
         },
         dataLabels: {
           name: {
@@ -105,7 +103,7 @@ export default function MonthlyTarget({
             fontSize: "36px",
             fontWeight: "600",
             offsetY: -40,
-            color: "#1D2939",
+            color: "#ffffff",
             formatter: function () {
               return `${progressLabel}%`;
             },
@@ -115,23 +113,13 @@ export default function MonthlyTarget({
     },
     fill: {
       type: "solid",
-      colors: ["#465FFF"],
+      colors: ["#0059ff"],
     },
     stroke: {
       lineCap: "round",
     },
     labels: ["Progress"],
   };
-
-  const [isOpen, setIsOpen] = useState(false);
-
-  function toggleDropdown() {
-    setIsOpen(!isOpen);
-  }
-
-  function closeDropdown() {
-    setIsOpen(false);
-  }
 
   const targetLabel = loading
     ? "-"
@@ -155,36 +143,6 @@ export default function MonthlyTarget({
               Target we've set for you each month
             </p>
           </div>
-          <div className="relative inline-block">
-            <button onClick={toggleDropdown} className="dropdown-toggle">
-              <DotsThreeOutlineVerticalIcon
-                weight="fill"
-                className="text-accent hover:text-white"
-              />
-            </button>
-            <Dropdown
-              isOpen={isOpen}
-              onClose={closeDropdown}
-              className="w-40 p-2"
-            >
-              <DropdownItem
-                tag="a"
-                variant={true}
-                onItemClick={closeDropdown}
-                className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              >
-                View More
-              </DropdownItem>
-              <DropdownItem
-                tag="a"
-                variant={false}
-                onItemClick={closeDropdown}
-                className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              >
-                Delete
-              </DropdownItem>
-            </Dropdown>
-          </div>
         </div>
         <div className="relative">
           <div className="max-h-[400px]">
@@ -197,20 +155,11 @@ export default function MonthlyTarget({
           </div>
 
           <div className="absolute left-1/2 -bottom-12 -translate-x-1/2 -translate-y-[95%]">
-            <Badge
-              color={
-                loading
-                  ? "light"
-                  : diffPercent > 0
-                    ? "success"
-                    : diffPercent < 0
-                      ? "error"
-                      : "light"
-              }
-              size="sm"
-            >
+            <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-medium rounded ${
+              loading ? "bg-white/5 text-accent border border-cultured" : getBadgeClass(progressLabel)
+            }`}>
               {loading ? "--" : diffLabel}
-            </Badge>
+            </span>
           </div>
         </div>
         <p className="mx-auto mt-10 w-full max-w-[250px] text-center text-sm text-white sm:text-base">
@@ -218,8 +167,8 @@ export default function MonthlyTarget({
             "Loading consultations..."
           ) : (
             <>
-              You did{" "}
-              <s className="font-medium text-blue-500">{todayCalls}</s>{" "}
+              You did{' '}
+              <span className="font-medium text-blue-500">{todayCalls}</span>{" "}
               consultation{todayCalls >= 2 ? "s" : ""} today, {todayCalls === 0 ? "Try to start the consultation" : "Keep up the good work!"}
             </>
           )}
@@ -228,7 +177,7 @@ export default function MonthlyTarget({
 
       <div className="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
         <div>
-          <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
+          <p className="mb-1 text-center text-accent text-theme-xs sm:text-sm">
             Target
           </p>
           <div className="flex items-center justify-center gap-1.5 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
@@ -240,7 +189,7 @@ export default function MonthlyTarget({
         <div className="w-px bg-gray-200 h-7 dark:bg-gray-800"></div>
 
         <div>
-          <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
+          <p className="mb-1 text-center text-accent text-theme-xs sm:text-sm">
             This Month
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
@@ -256,7 +205,7 @@ export default function MonthlyTarget({
         <div className="w-px bg-gray-200 h-7 dark:bg-gray-800"></div>
 
         <div>
-          <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
+          <p className="mb-1 text-center text-accent text-theme-xs sm:text-sm">
             Today
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">

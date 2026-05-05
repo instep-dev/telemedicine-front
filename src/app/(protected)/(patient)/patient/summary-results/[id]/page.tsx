@@ -181,6 +181,12 @@ function SummaryContent({ note }: { note: SoapNoteDto }) {
                 <p className="text-xs text-accent">Doctor</p>
                 <p className="font-medium text-white">{note.doctorName ?? "-"}</p>
               </div>
+              {note.nurseName && (
+                <div className="rounded-lg border border-cultured bg-card/50 p-3">
+                  <p className="text-xs text-accent">Nurse</p>
+                  <p className="font-medium text-white">{note.nurseName}</p>
+                </div>
+              )}
               <div className="rounded-lg border border-cultured bg-card/50 p-3">
                 <p className="text-xs text-accent">Consultation Time</p>
                 <p className="font-medium text-white">{formatDateTime(note.scheduledStartTime)}</p>
