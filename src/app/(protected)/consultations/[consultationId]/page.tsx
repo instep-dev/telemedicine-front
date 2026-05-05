@@ -52,10 +52,8 @@ export default function ConsultationSessionPage() {
   const [consultationMode, setConsultationMode] = useState<"VIDEO" | "VOICE">("VIDEO");
   const [isEnding, setIsEnding] = useState(false);
 
-  // Timer
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Device selection
   const [audioDevices, setAudioDevices] = useState<DeviceOption[]>([]);
   const [videoDevices, setVideoDevices] = useState<DeviceOption[]>([]);
   const [selectedAudioId, setSelectedAudioId] = useState<string>("");
@@ -63,7 +61,6 @@ export default function ConsultationSessionPage() {
   const [showAudioMenu, setShowAudioMenu] = useState(false);
   const [showVideoMenu, setShowVideoMenu] = useState(false);
 
-  // Multi-party remote participants
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipantEntry[]>([]);
 
   const roomRef = useRef<Room | null>(null);
@@ -87,7 +84,6 @@ export default function ConsultationSessionPage() {
     return "Consultation Room";
   }, [isDoctor, isPatient, isNurse]);
 
-  // Timer
   useEffect(() => {
     if (!connected) return;
     setElapsedSeconds(0);
@@ -95,7 +91,6 @@ export default function ConsultationSessionPage() {
     return () => clearInterval(id);
   }, [connected]);
 
-  // Enumerate devices after connected
   useEffect(() => {
     if (!connected) return;
     navigator.mediaDevices
@@ -115,7 +110,6 @@ export default function ConsultationSessionPage() {
       .catch(() => {});
   }, [connected]);
 
-  // Close device menus on outside click
   useEffect(() => {
     if (!showAudioMenu && !showVideoMenu) return;
     const close = () => {
@@ -125,8 +119,6 @@ export default function ConsultationSessionPage() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [showAudioMenu, showVideoMenu]);
-
-  // ── helpers ──────────────────────────────────────────────────────────────────
 
   function clearContainers() {
     if (localRef.current) localRef.current.innerHTML = "";
@@ -265,8 +257,6 @@ export default function ConsultationSessionPage() {
     }
   }
 
-  // Ref callback for each remote participant's container div.
-  // When the element mounts, attaches any already-subscribed video tracks.
   const setRemoteContainerRef = useCallback((sid: string, el: HTMLElement | null) => {
     if (el) {
       remoteContainersRef.current.set(sid, el);
@@ -367,7 +357,6 @@ export default function ConsultationSessionPage() {
 
       roomRef.current = room;
       setConnected(true);
-      // Nurse joins with mic muted by default
       const startMuted = isNurse;
       setMicOn(!startMuted);
       if (startMuted) {
@@ -481,6 +470,8 @@ export default function ConsultationSessionPage() {
 
   const isConnecting = !connected && !errMsg;
   const hasRemote = remoteParticipants.length > 0;
+  // Split view when nurse joins (3 participants total: doctor + patient + nurse).
+  // On mobile portrait we stack vertically; on sm+ we go side-by-side.
   const isSplitView = remoteParticipants.length >= 2;
 
   // ── UI ───────────────────────────────────────────────────────────────────────
@@ -489,10 +480,21 @@ export default function ConsultationSessionPage() {
     <div className="relative w-full h-screen flex flex-col bg-[#202124] overflow-hidden">
 
       {/* ═══ MAIN VIDEO AREA ═══ */}
-      <div className="flex-1 relative overflow-hidden bg-[#3c4043]">
+      <div className="flex-1 relative overflow-hidden bg-[#3c4043] min-h-0">
 
-        {/* Remote videos — 1 participant: fullscreen; 2 participants: side-by-side */}
-        <div className={`absolute inset-0 flex ${isSplitView ? "flex-row divide-x divide-white/10" : ""}`}>
+        {/*
+          Remote videos.
+          1 participant  → fullscreen (absolute inset-0)
+          2 participants → portrait-mobile: stacked top/bottom (flex-col)
+                           landscape / sm+:  side-by-side (sm:flex-row)
+        */}
+        <div
+          className={`absolute inset-0 flex ${
+            isSplitView
+              ? "flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/10"
+              : ""
+          }`}
+        >
           {remoteParticipants.map(({ sid, identity }) => (
             <div
               key={sid}
@@ -502,9 +504,8 @@ export default function ConsultationSessionPage() {
                 ref={(el) => setRemoteContainerRef(sid, el as HTMLElement | null)}
                 className="w-full h-full"
               />
-              {/* Per-participant name label */}
-              <div className="absolute bottom-4 left-4 pointer-events-none">
-                <span className="bg-black/50 backdrop-blur-sm text-white/90 text-xs px-2.5 py-1 rounded-lg">
+              <div className="absolute bottom-3 left-3 pointer-events-none">
+                <span className="bg-black/50 backdrop-blur-sm text-white/90 text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg">
                   {identity}
                 </span>
               </div>
@@ -514,16 +515,17 @@ export default function ConsultationSessionPage() {
 
         {/* Placeholder when no remote participants or voice mode */}
         {(!connected || isVoiceMode || !hasRemote) && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">
-            <div className="w-28 h-28 rounded-full bg-[#5f6368] flex items-center justify-center shadow-xl">
-              <UserCircleIcon size={64} weight="thin" className="text-white/40" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 sm:gap-4 pointer-events-none">
+            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-[#5f6368] flex items-center justify-center shadow-xl">
+              <UserCircleIcon size={48} weight="thin" className="text-white/40 sm:hidden" />
+              <UserCircleIcon size={64} weight="thin" className="text-white/40 hidden sm:block" />
             </div>
             {isVoiceMode && hasRemote && (
-              <p className="text-white/70 text-base font-medium">
+              <p className="text-white/70 text-sm sm:text-base font-medium">
                 {remoteParticipants.map((p) => p.identity).join(", ")}
               </p>
             )}
-            <p className="text-white/30 text-sm">
+            <p className="text-white/30 text-xs sm:text-sm text-center px-6">
               {!connected
                 ? isConnecting
                   ? "Connecting..."
@@ -538,35 +540,36 @@ export default function ConsultationSessionPage() {
         {/* Connecting spinner overlay */}
         {isConnecting && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
-            <CircleNotchIcon className="animate-spin text-white/50" size={52} />
+            <CircleNotchIcon className="animate-spin text-white/50" size={48} />
           </div>
         )}
 
         {/* Error / warning toast */}
         {errMsg && (
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20">
-            <div className="bg-red-600/90 backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-xl shadow-2xl border border-red-500/30">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[calc(100%-2rem)] sm:w-auto">
+            <div className="bg-red-600/90 backdrop-blur-sm text-white text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xl border border-red-500/30 text-center">
               {errMsg}
             </div>
           </div>
         )}
 
-        {/* ── Local PiP (top-right) ── */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="w-[200px] aspect-video rounded-2xl overflow-hidden bg-[#202124] border border-white/10 shadow-2xl">
-            {/* local video track will attach here */}
+        {/*
+          Local PiP — scales down on small screens.
+          Mobile: 100px wide  |  sm: 140px  |  md+: 200px
+        */}
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+          <div className="w-[100px] sm:w-[140px] md:w-[200px] aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-[#202124] border border-white/10 shadow-2xl relative">
             <div ref={localRef} className="w-full h-full" />
 
-            {/* placeholder if no video */}
             {(!connected || isVoiceMode || !camOn) && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#3c4043]">
-                <UserCircleIcon size={36} weight="thin" className="text-white/25" />
+                <UserCircleIcon size={28} weight="thin" className="text-white/25 sm:hidden" />
+                <UserCircleIcon size={36} weight="thin" className="text-white/25 hidden sm:block" />
               </div>
             )}
 
-            {/* "You" label */}
-            <div className="absolute bottom-1.5 left-2 pointer-events-none">
-              <span className="bg-black/50 backdrop-blur-sm text-white/80 text-[10px] px-1.5 py-0.5 rounded">
+            <div className="absolute bottom-1 left-1.5 pointer-events-none">
+              <span className="bg-black/50 backdrop-blur-sm text-white/80 text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded">
                 {user?.name ?? "You"}
               </span>
             </div>
@@ -575,30 +578,30 @@ export default function ConsultationSessionPage() {
       </div>
 
       {/* ═══ BOTTOM CONTROL BAR ═══ */}
-      <div className="shrink-0 h-[72px] bg-[#202124] border-t border-white/[0.06] flex items-center px-5 gap-2">
+      <div className="shrink-0 bg-[#202124] border-t border-white/[0.06] flex items-center px-3 sm:px-5 gap-2 h-[60px] sm:h-[72px]">
 
-        {/* Left: session info */}
-        <div className="flex-1 flex items-center gap-2 min-w-0 overflow-hidden">
-          <span className="text-white/90 text-sm font-medium truncate max-w-[130px]">{pageTitle}</span>
-          <span className="text-white/25 text-xs">•</span>
-          <span className="text-white/60 text-sm tabular-nums shrink-0">{formatTime(elapsedSeconds)}</span>
-          <span className="text-white/25 text-xs">•</span>
-          <span className="text-white/25 text-[11px] font-mono truncate hidden sm:block">
+        {/* Left: session info — timer always visible, title & ID hidden on small screens */}
+        <div className="flex-1 flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-hidden">
+          <span className="text-white/90 text-xs sm:text-sm font-medium truncate hidden sm:block max-w-[120px] lg:max-w-[160px]">
+            {pageTitle}
+          </span>
+          <span className="text-white/25 text-xs hidden sm:block">•</span>
+          <span className="text-white/60 text-xs sm:text-sm tabular-nums shrink-0">
+            {formatTime(elapsedSeconds)}
+          </span>
+          <span className="text-white/25 text-xs hidden md:block">•</span>
+          <span className="text-white/25 text-[11px] font-mono truncate hidden md:block">
             {sessionId.length > 12 ? `${sessionId.slice(0, 12)}…` : sessionId}
           </span>
         </div>
 
         {/* Center: controls */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
 
           {/* ── Microphone + device picker ── */}
-          <div
-            className="relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Popup menu */}
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
             {showAudioMenu && (
-              <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-[#292a2d] border border-white/10 rounded-2xl shadow-2xl py-2 min-w-[256px] z-50 overflow-hidden">
+              <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-[#292a2d] border border-white/10 rounded-2xl shadow-2xl py-2 w-[min(256px,calc(100vw-1.5rem))] z-50 overflow-hidden">
                 <p className="text-white/30 text-[10px] uppercase tracking-[0.12em] font-medium px-4 pt-1 pb-2.5">
                   Microphone
                 </p>
@@ -609,14 +612,14 @@ export default function ConsultationSessionPage() {
                     <button
                       key={d.deviceId}
                       onClick={() => switchAudioDevice(d.deviceId)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors hover:bg-white/[0.07]"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors hover:bg-white/[0.07] active:bg-white/10"
                     >
                       <CheckIcon
                         size={14}
                         weight="bold"
-                        className={selectedAudioId === d.deviceId ? "text-[#8ab4f8]" : "text-transparent"}
+                        className={selectedAudioId === d.deviceId ? "text-[#8ab4f8] shrink-0" : "text-transparent shrink-0"}
                       />
-                      <span className={selectedAudioId === d.deviceId ? "text-[#8ab4f8]" : "text-white/80"}>
+                      <span className={`truncate ${selectedAudioId === d.deviceId ? "text-[#8ab4f8]" : "text-white/80"}`}>
                         {d.label || `Microphone (${d.deviceId.slice(0, 6)})`}
                       </span>
                     </button>
@@ -630,20 +633,21 @@ export default function ConsultationSessionPage() {
                 onClick={toggleMic}
                 disabled={!connected || isEnding}
                 title={micOn ? "Mute microphone" : "Unmute microphone"}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all disabled:opacity-40 ${
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all disabled:opacity-40 ${
                   micOn
-                    ? "bg-white/10 hover:bg-white/[0.16] text-white"
-                    : "bg-red-500 hover:bg-red-600 text-white"
+                    ? "bg-white/10 hover:bg-white/[0.16] active:bg-white/20 text-white"
+                    : "bg-red-500 hover:bg-red-600 active:bg-red-700 text-white"
                 }`}
               >
                 {micOn
-                  ? <MicrophoneIcon size={20} weight="fill" />
-                  : <MicrophoneSlashIcon size={20} weight="fill" />}
+                  ? <MicrophoneIcon size={18} weight="fill" />
+                  : <MicrophoneSlashIcon size={18} weight="fill" />}
               </button>
+              {/* Device picker caret — hidden on mobile to keep bar clean */}
               <button
                 onClick={() => { setShowAudioMenu((v) => !v); setShowVideoMenu(false); }}
                 disabled={!connected}
-                className="w-[18px] h-[18px] mb-0.5 rounded-full bg-[#3c4043] border border-white/15 flex items-center justify-center text-white/50 hover:text-white hover:bg-[#52565a] transition-colors disabled:opacity-30"
+                className="hidden sm:flex w-[18px] h-[18px] mb-0.5 rounded-full bg-[#3c4043] border border-white/15 items-center justify-center text-white/50 hover:text-white hover:bg-[#52565a] transition-colors disabled:opacity-30"
               >
                 <CaretUpIcon size={9} weight="bold" />
               </button>
@@ -652,12 +656,9 @@ export default function ConsultationSessionPage() {
 
           {/* ── Camera + device picker ── */}
           {!isVoiceMode && (
-            <div
-              className="relative"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
               {showVideoMenu && (
-                <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-[#292a2d] border border-white/10 rounded-2xl shadow-2xl py-2 min-w-[256px] z-50 overflow-hidden">
+                <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-[#292a2d] border border-white/10 rounded-2xl shadow-2xl py-2 w-[min(256px,calc(100vw-1.5rem))] z-50 overflow-hidden">
                   <p className="text-white/30 text-[10px] uppercase tracking-[0.12em] font-medium px-4 pt-1 pb-2.5">
                     Camera
                   </p>
@@ -668,14 +669,14 @@ export default function ConsultationSessionPage() {
                       <button
                         key={d.deviceId}
                         onClick={() => switchVideoDevice(d.deviceId)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors hover:bg-white/[0.07]"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors hover:bg-white/[0.07] active:bg-white/10"
                       >
                         <CheckIcon
                           size={14}
                           weight="bold"
-                          className={selectedVideoId === d.deviceId ? "text-[#8ab4f8]" : "text-transparent"}
+                          className={selectedVideoId === d.deviceId ? "text-[#8ab4f8] shrink-0" : "text-transparent shrink-0"}
                         />
-                        <span className={selectedVideoId === d.deviceId ? "text-[#8ab4f8]" : "text-white/80"}>
+                        <span className={`truncate ${selectedVideoId === d.deviceId ? "text-[#8ab4f8]" : "text-white/80"}`}>
                           {d.label || `Camera (${d.deviceId.slice(0, 6)})`}
                         </span>
                       </button>
@@ -689,20 +690,21 @@ export default function ConsultationSessionPage() {
                   onClick={toggleCam}
                   disabled={!connected || isEnding}
                   title={camOn ? "Turn off camera" : "Turn on camera"}
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all disabled:opacity-40 ${
+                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all disabled:opacity-40 ${
                     camOn
-                      ? "bg-white/10 hover:bg-white/[0.16] text-white"
-                      : "bg-red-500 hover:bg-red-600 text-white"
+                      ? "bg-white/10 hover:bg-white/[0.16] active:bg-white/20 text-white"
+                      : "bg-red-500 hover:bg-red-600 active:bg-red-700 text-white"
                   }`}
                 >
                   {camOn
-                    ? <VideoCameraIcon size={20} weight="fill" />
-                    : <VideoCameraSlashIcon size={20} weight="fill" />}
+                    ? <VideoCameraIcon size={18} weight="fill" />
+                    : <VideoCameraSlashIcon size={18} weight="fill" />}
                 </button>
+                {/* Device picker caret — hidden on mobile */}
                 <button
                   onClick={() => { setShowVideoMenu((v) => !v); setShowAudioMenu(false); }}
                   disabled={!connected}
-                  className="w-[18px] h-[18px] mb-0.5 rounded-full bg-[#3c4043] border border-white/15 flex items-center justify-center text-white/50 hover:text-white hover:bg-[#52565a] transition-colors disabled:opacity-30"
+                  className="hidden sm:flex w-[18px] h-[18px] mb-0.5 rounded-full bg-[#3c4043] border border-white/15 items-center justify-center text-white/50 hover:text-white hover:bg-[#52565a] transition-colors disabled:opacity-30"
                 >
                   <CaretUpIcon size={9} weight="bold" />
                 </button>
@@ -719,16 +721,16 @@ export default function ConsultationSessionPage() {
             }
             disabled={isEnding}
             title={isDoctor ? "End call for everyone" : "Leave call"}
-            className="mx-2 w-14 h-12 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 flex items-center justify-center transition-all disabled:opacity-50 shadow-lg shadow-red-900/40"
+            className="mx-1 sm:mx-2 w-12 h-11 sm:w-14 sm:h-12 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 flex items-center justify-center transition-all disabled:opacity-50 shadow-lg shadow-red-900/40"
           >
             {isEnding
-              ? <CircleNotchIcon size={20} className="animate-spin text-white" />
-              : <PhoneSlashIcon size={20} weight="fill" className="text-white" />}
+              ? <CircleNotchIcon size={18} className="animate-spin text-white" />
+              : <PhoneSlashIcon size={18} weight="fill" className="text-white" />}
           </button>
         </div>
 
-        {/* Right: placeholder for future controls */}
-        <div className="flex-1 flex justify-end items-center" />
+        {/* Right: spacer to keep controls centered */}
+        <div className="flex-1" />
       </div>
     </div>
   );
