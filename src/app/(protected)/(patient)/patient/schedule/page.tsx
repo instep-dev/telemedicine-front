@@ -32,6 +32,7 @@ export default function PatientSchedulePage() {
   const [detail, setDetail] = useState<ConsultationSessionDto | null>(null);
   const canJoin = detail?.patientJoinState === "JOIN";
   const isJoined = detail?.patientJoinState === "JOINED";
+  const sessionEnded = detail?.sessionStatus === "COMPLETED" || detail?.sessionStatus === "FAILED";
 
   return (
     <>
@@ -43,12 +44,12 @@ export default function PatientSchedulePage() {
       />
 
       {/* Session Detail Panel */}
-      <div className={`fixed min-h-screen py-20 flex items-center justify-center inset-0 z-[9999999] transition-all duration-300 ${detail ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <div className={`fixed min-h-screen py-4 sm:py-20 flex items-center justify-center inset-0 z-[9999999] transition-all duration-300 ${detail ? "pointer-events-auto" : "pointer-events-none"}`}>
         <div
           className={`absolute inset-0 transition-all duration-300 ${detail ? "bg-background/20 backdrop-blur-[10px]" : "bg-background/0 backdrop-blur-none"}`}
           onClick={() => setDetail(null)}
         />
-        <div className={`${detail ? "scale-100 opacity-100" : "scale-75 opacity-0"} transition-all duration-300 w-[450px] relative bg-card border border-cultured rounded-lg flex flex-col shadow-2xl`}>
+        <div className={`${detail ? "scale-100 opacity-100" : "scale-75 opacity-0"} transition-all duration-300 w-[calc(100%-2rem)] sm:w-[450px] max-w-[450px] relative bg-card border border-cultured rounded-lg flex flex-col shadow-2xl`}>
           {detail && (<>
             <div className="flex items-center justify-between px-5 py-4 border-b border-cultured">
               <div>
@@ -67,6 +68,9 @@ export default function PatientSchedulePage() {
 
               <div className="space-y-3 pt-1">
                 <DetailRow label="Doctor" value={detail.doctorName ?? "-"} />
+                {detail.nurseId && (
+                  <DetailRow label="Nurse" value={detail.nurseName ?? "-"} />
+                )}
                 <DetailRow label="Mode" value={detail.consultationMode} />
                 <DetailRow label="Type" value={detail.sessionType} />
                 <DetailRow
@@ -111,22 +115,33 @@ export default function PatientSchedulePage() {
                     Patient · {detail.patientJoinState}
                   </span>
                 </div>
+                {detail.nurseId && detail.nurseJoinState !== "NONE" && (
+                  <span className={`w-full text-center text-xs py-1.5 rounded border flex justify-center ${
+                    detail.nurseJoinState === "JOINED"
+                      ? "border-emerald-800 bg-emerald-500/10 text-emerald-400"
+                      : "border-cultured text-accent"
+                  }`}>
+                    Nurse · {detail.nurseJoinState}
+                  </span>
+                )}
               </div>
 
-              <button
-                disabled={!canJoin && !isJoined}
-                onClick={() => router.push(`/consultations/${detail.sessionId}`)}
-                className={`w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  canJoin
-                    ? "bg-gradient-primary text-white"
-                    : isJoined
-                    ? "border border-emerald-800 bg-emerald-500/10 text-emerald-400"
-                    : "border border-cultured text-accent cursor-not-allowed opacity-50"
-                }`}
-              >
-                {isJoined ? "Rejoin Consultation" : canJoin ? "Join Consultation" : "Not Yet Available"}
-                {(canJoin || isJoined) && <ArrowRightIcon size={14} weight="bold" />}
-              </button>
+              {!sessionEnded && (
+                <button
+                  disabled={!canJoin && !isJoined}
+                  onClick={() => router.push(`/consultations/${detail.sessionId}`)}
+                  className={`w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    canJoin
+                      ? "bg-gradient-primary text-white"
+                      : isJoined
+                      ? "border border-emerald-800 bg-emerald-500/10 text-emerald-400"
+                      : "border border-cultured text-accent cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  {isJoined ? "Rejoin Consultation" : canJoin ? "Join Consultation" : "Not Yet Available"}
+                  {(canJoin || isJoined) && <ArrowRightIcon size={14} weight="bold" />}
+                </button>
+              )}
             </div>
           </>)}
         </div>

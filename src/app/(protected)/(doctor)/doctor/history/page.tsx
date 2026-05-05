@@ -33,24 +33,9 @@ import { useCallsQuery } from "@/services/history/history.queries";
 import { formatDuration } from "@/hooks/useDurationFormat";
 import DataEmpty from "@/components/reusable/DataEmpty";
 import { EmptyIcon } from "@phosphor-icons/react";
+import useTrimText from "@/hooks/useTrimText";
 
 const PAGE_SIZE = 10;
-
-
-// pull request test into staging
-const CreateRoomButton: React.FC = () => {
-  const { handleCreateRoom, isCreating } = useCreateRoom();
-
-  return (
-    <Button
-      onClick={handleCreateRoom}
-      startIcon={<PlusIcon weight="bold" />}
-      disabled={isCreating}
-    >
-      {isCreating ? "Creating..." : "Create Room"}
-    </Button>
-  );
-};
 
 const formatDate = (date: any) => {
   const d = new Date(date);
@@ -77,7 +62,6 @@ const formatDate = (date: any) => {
   )
 };
 
-// rebase conflict
 const getStatusLabel = (status?: string | null): string => {
   if (status === "STARTED") return "STARTED";
   if (status === "CONNECTED") return "IN CALL";
@@ -196,42 +180,6 @@ const HistoryPage = () => {
 
   const rows = data?.data ?? [];
 
-  // const handleNextPage = () => {
-  //   if (data?.pagination?.hasMore) {
-  //     setPage((prev) => prev + 1);
-  //   }
-  // };
-
-  // const handlePrevPage = () => {
-  //   if (page > 1) {
-  //     setPage((prev) => prev - 1);
-  //   }
-  // };
-
-  // const formatDuration = (seconds?: number | null): string => {
-  //   if (!seconds || seconds <= 0) return "-";
-
-  //   const hours = Math.floor(seconds / 3600);
-  //   const minutes = Math.floor((seconds % 3600) / 60);
-  //   const secs = seconds % 60;
-
-  //   const parts: string[] = [];
-
-  //   if (hours > 0) {
-  //     parts.push(`${hours} hour${hours > 1 ? "s" : ""}`);
-  //   }
-
-  //   if (minutes > 0) {
-  //     parts.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
-  //   }
-
-  //   if (hours === 0 && secs > 0) {
-  //     parts.push(`${secs} second${secs > 1 ? "s" : ""}`);
-  //   }
-
-  //   return parts.join(" ");
-  // };
-
   const handlePageChange = (nextPage: number) => {
     if (nextPage === page) return;
     if (nextPage < page) {
@@ -255,13 +203,6 @@ const HistoryPage = () => {
             <p className="mt-1 text-sm text-accent">
               Manage your consultations and keep track.
             </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button variant="outline" startIcon={<DownloadIcon />}>
-              Export
-            </Button>
-            <CreateRoomButton />
           </div>
         </div>
 
@@ -403,25 +344,30 @@ const HistoryPage = () => {
 
               <TableBody className="divide-y divide-cultured">
                 {rows.map((item, i) => (
-                  <TableRow key={item.id} className={`${i % 2 ? "bg-neutral-800" : ""} hover:opacity-70 transition-all duration-300 cursor-pointer`}>
-                    <TableCell className="border-b border-cultured px-6 py-4 text-start">
+                  <TableRow key={item.id} className={` hover:opacity-70 transition-all duration-300 cursor-pointer`}>
+                    <TableCell className="border-b border-cultured px-6 py-4 text-start group relative">
                       <div className="block text-theme-sm text-white flex items-center gap-x-1">
-                        {item.doctorName ?? "-"}
+                        {useTrimText(item.doctorName ?? "-", 15)}
                         <SealCheckIcon className="text-blue-500" size={12} weight="fill"/>
+                      </div>
+                      <div className="absolute w-auto min-w-42 group-hover:opacity-100 opacity-0 -top-2 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-gradient-gray shadow border border-cultured">
+                        <div className="p-2 relative">
+                          {item.doctorName ?? "-"}
+                        </div>
                       </div>
                     </TableCell>
 
                     <TableCell className="group cursor-pointer border-b border-cultured p-6 relative text-theme-sm text-white">
-                      {item.patientName ?? "-"}
-                      <div className="absolute min-w-52 group-hover:opacity-100 opacity-0 -top-6 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-gradient-gray shadow border border-cultured">
+                      {useTrimText(item.patientName ?? "-", 15)}
+                      <div className="absolute w-auto group-hover:opacity-100 opacity-0 -top-2 left-6 transition-all duration-200 rounded-br-lg rounded-t-lg text-xs bg-gradient-gray shadow border border-cultured">
                         <div className="p-2 relative">
-                          {item.patientIdentity ?? "-"}
+                          {item.patientName ?? "-"}
                         </div>
                       </div>
                     </TableCell>
 
                     <TableCell className="border-b border-cultured p-6 text-theme-sm text-white">
-                      {item.roomName ?? item.roomSid ?? "-"}
+                      {useTrimText(item.roomName ?? item.roomSid ?? "-", 15)}
                     </TableCell>
 
                     <TableCell className="border-b border-cultured p-6 text-theme-sm text-white">
@@ -474,35 +420,20 @@ const HistoryPage = () => {
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col items-center gap-3 px-6 py-5 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-accent">
             Showing <span className="font-medium text-white">{rows.length}</span> item(s) on page <span className="font-medium text-white">{page}</span>
           </p>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <span className="text-sm text-accent">
               Page <span className="font-medium text-white">{page}</span> of <span className="font-medium text-white">{totalPages}</span>
             </span>
-
-            <div className="flex items-center gap-2">
-              {/* <Button variant="outline" onClick={handlePrevPage} disabled={page === 1}>
-                Prev
-              </Button> */}
-
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-
-              {/* <Button
-                variant="outline"
-                onClick={handleNextPage}
-                disabled={!data?.pagination?.hasMore}
-              >
-                Next
-              </Button> */}
-            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>

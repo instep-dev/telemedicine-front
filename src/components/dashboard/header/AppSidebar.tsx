@@ -76,18 +76,37 @@ const NAV_ITEMS_BY_ROLE: Record<UserRole, NavItem[]> = {
       path: "/patient/history",
     },
   ],
+  NURSE: [
+    {
+      icon: <GridFourIcon size={22} />,
+      name: "Dashboard",
+      path: "/nurse/dashboard",
+    },
+    {
+      name: "Schedule",
+      icon: <CalendarBlankIcon size={22} />,
+      path: "/nurse/schedule",
+    },
+    {
+      name: "AI Summary",
+      icon: <RobotIcon size={22} />,
+      path: "/nurse/ai-summary",
+    },
+  ],
 };
 
 const OTHERS_ITEMS_BY_ROLE: Record<UserRole, NavItem[]> = {
   DOCTOR: [],
   ADMIN: [],
   PATIENT: [],
+  NURSE: [],
 };
 
 const APP_TITLE_BY_ROLE: Record<UserRole, string> = {
   DOCTOR: "Teledoctor",
   ADMIN: "Teleadmin",
   PATIENT: "Telepatient",
+  NURSE: "Telenurse",
 };
 
 const useAuthSnapshot = () =>
@@ -100,6 +119,7 @@ const useAuthSnapshot = () =>
 const inferRoleFromPathname = (pathname: string): UserRole => {
   if (pathname.startsWith("/admin")) return "ADMIN";
   if (pathname.startsWith("/patient")) return "PATIENT";
+  if (pathname.startsWith("/nurse")) return "NURSE";
   return "DOCTOR";
 };
 
@@ -278,11 +298,11 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed flex flex-col justify-between mt-16 pb-6 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-card text-white border-r border-cultured h-screen transition-all duration-300 ease-in-out z-50 
+      className={`fixed flex flex-col justify-between mt-16 pb-6 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-card text-white border-r border-cultured h-screen transition-all duration-300 ease-in-out z-50
         ${
-          isExpanded || isMobileOpen
-            ? "w-[290px]"
-            : isHovered
+          isMobileOpen
+            ? "w-full lg:w-[290px]"
+            : isExpanded || isHovered
             ? "w-[290px]"
             : "w-[90px]"
         }
@@ -311,7 +331,7 @@ const AppSidebar: React.FC = () => {
                 </div>
               </>
             ) : (
-              <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center dark:bg-blue-400">
+              <div className="w-5 h-5 bg-gradient-primary rounded-full flex items-center justify-center">
                 <FirstAidIcon size={11} className="text-white" weight="fill" />
               </div>
             )}
@@ -321,19 +341,6 @@ const AppSidebar: React.FC = () => {
           <nav className="mb-6">
             <div className="flex flex-col gap-4">
               <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-[20px] text-accent ${
-                    !isExpanded && !isHovered
-                      ? "lg:justify-center"
-                      : "justify-start"
-                  }`}
-                >
-                  {isExpanded || isHovered || isMobileOpen ? (
-                    "Menu"
-                  ) : (
-                    <DotsNineIcon size={20} />
-                  )}
-                </h2>
                 {renderMenuItems(navItems, "main")}
               </div>
 
@@ -357,7 +364,7 @@ const AppSidebar: React.FC = () => {
               ) : null}
             </div>
           </nav>
-          <SidebarWidget />
+          <SidebarWidget expanded={isExpanded} hover={isHovered} mobile={isMobileOpen}/>
         </div>
       </div>
     </aside>

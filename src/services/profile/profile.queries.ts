@@ -219,3 +219,75 @@ export const useUploadProfilePicturePatientMutation = () => {
     },
   });
 };
+
+// ============== NURSE ==============
+export const useGetNurseProfileQuery = () => {
+  return useQuery({
+    queryKey: ["nurse-profile"],
+    queryFn: profileApi.getNurseProfile,
+  });
+};
+
+export const useUpdateNurseProfileMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: profileApi.updateNurseProfile,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["nurse-profile"], data);
+      if (data.fullName) {
+        const current = authStore.getState().user;
+        if (current) {
+          authStore.getState().setAuth({
+            accessToken: authStore.getState().accessToken!,
+            user: { ...current, name: data.fullName },
+          });
+        }
+      }
+    },
+  });
+};
+
+export const useRequestEmailChangeNurseMutation = () => {
+  return useMutation({
+    mutationFn: (payload: ChangeEmailRequest) =>
+      profileApi.requestEmailChange("nurse", payload),
+  });
+};
+
+export const useConfirmEmailChangeNurseMutation = () => {
+  return useMutation({
+    mutationFn: (payload: ConfirmEmailChangeRequest) =>
+      profileApi.confirmEmailChange("nurse", payload),
+  });
+};
+
+export const useVerifyResetCodeNurseMutation = () => {
+  return useMutation({
+    mutationFn: (payload: { code: string }) =>
+      profileApi.verifyResetCode("nurse", payload),
+  });
+};
+
+export const useRequestPasswordResetNurseMutation = () => {
+  return useMutation({
+    mutationFn: () => profileApi.requestPasswordReset("nurse"),
+  });
+};
+
+export const useSetNewPasswordNurseMutation = () => {
+  return useMutation({
+    mutationFn: (payload: SetNewPasswordRequest) =>
+      profileApi.setNewPassword("nurse", payload),
+  });
+};
+
+export const useUploadProfilePictureNurseMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => profileApi.uploadProfilePicture("nurse", file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-picture", "NURSE"] });
+      queryClient.invalidateQueries({ queryKey: ["nurse-profile"] });
+    },
+  });
+};

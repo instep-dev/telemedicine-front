@@ -32,6 +32,10 @@ export default function UserDropdown() {
         const d = await profileApi.getAdminProfile();
         return d.profilePicture ?? null;
       }
+      if (role === "NURSE") {
+        const d = await profileApi.getNurseProfile();
+        return d.profilePicture ?? null;
+      }
       const d = await profileApi.getPatientProfile();
       return d.profilePicture ?? null;
     },

@@ -22,6 +22,7 @@ const roles: Record<UserRole, string> = {
   DOCTOR: "Doctor",
   ADMIN: "Admin",
   PATIENT: "Patient",
+  NURSE: "Nurse",
 };
 
 function OAuthCompletePageContent() {
@@ -37,6 +38,7 @@ function OAuthCompletePageContent() {
   const [phone, setPhone] = useState("");
   const [license, setLicense] = useState("");
   const [adminId, setAdminId] = useState("");
+  const [nurseId, setNurseId] = useState("");
   const [bornDate, setBornDate] = useState("");
 
   const errorMessage = useMemo(() => {
@@ -56,6 +58,7 @@ function OAuthCompletePageContent() {
         phone,
         license: role === "DOCTOR" ? license : undefined,
         adminId: role === "ADMIN" ? adminId : undefined,
+        nurseId: role === "NURSE" ? nurseId : undefined,
         bornDate: role === "PATIENT" ? bornDate : undefined,
       });
       const session = await authApi.oauthSession(data.accessToken);
@@ -68,14 +71,14 @@ function OAuthCompletePageContent() {
 
   if (!token) {
     return (
-      <div className="py-6 px-12 flex items-center justify-center">
+      <div className="py-6 px-4 sm:px-8 lg:px-12 flex items-center justify-center min-h-screen">
         <p className="text-sm text-red-600">Token OAuth tidak valid.</p>
       </div>
     );
   }
 
   return (
-    <div className="py-6 px-12 flex flex-col justify-between">
+    <div className="py-6 px-4 sm:px-8 lg:px-12 flex flex-col justify-between min-h-screen">
       <div className="text-sm text-right text-accent flex items-center justify-between">
         <button onClick={()=> router.back()} className="flex items-center justify-center gap-1 px-3 text-white py-2 rounded-full bg-gradient-gray border border-cultured">
           <CaretLeftIcon weight="fill"/>
@@ -86,7 +89,7 @@ function OAuthCompletePageContent() {
 
       <div>
         <div className="text-center mb-6">
-          <h3 className="text-3xl mb-2">Complete Your Profile</h3>
+          <h3 className="text-2xl sm:text-3xl mb-2">Complete Your Profile</h3>
           <p className="text-accent text-sm max-w-xs text-center mx-auto">
             Please fill in the remaining details to finish setting up your {roles[role]} account.
           </p>
@@ -136,6 +139,18 @@ function OAuthCompletePageContent() {
                 value={adminId}
                 onChange={(e) => setAdminId(e.target.value)}
                 placeholder="101-2024-001"
+                icon={IdentificationCardIcon}
+              />
+            </div>
+          )}
+
+          {role === "NURSE" && (
+            <div>
+              <label className="block text-xs text-accent mb-2">Nurse ID</label>
+              <Input
+                value={nurseId}
+                onChange={(e) => setNurseId(e.target.value)}
+                placeholder="NUR-ICU-005"
                 icon={IdentificationCardIcon}
               />
             </div>

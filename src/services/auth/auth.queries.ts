@@ -73,8 +73,9 @@ const isTokenStillValid = (token: string) => {
 
 /**
  * Jalan sekali saat app load.
- * - success: set accessToken
- * - 401: normal (belum login)
+ * - refresh success → update token
+ * - refresh 401 + stored token valid → keep stored token (stay logged in)
+ * - refresh 401 + no valid fallback → clear (not logged in)
  */
 export const bootstrapAuth = async () => {
   const current = authStore.getState();

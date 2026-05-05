@@ -73,3 +73,18 @@ export function usePatientSessionsQuery(
     enabled: !!accessToken && enabled,
   });
 }
+
+export function useNurseSessionsQuery(
+  accessToken: string | null,
+  params?: ListConsultationSessionsParams,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["consultation-sessions", "nurse", params],
+    queryFn: () => {
+      if (!accessToken) throw new Error("No access token");
+      return consultationsApi.listNurseSessions(accessToken, params);
+    },
+    enabled: !!accessToken && enabled,
+  });
+}

@@ -10,8 +10,8 @@ export function cn(...inputs: ClassValue[]) {
 export const CALENDAR_HOUR_H = 64;
 export const CALENDAR_TOTAL_H = CALENDAR_HOUR_H * 24;
 export const CALENDAR_HOURS = Array.from({ length: 24 }, (_, i) => i);
-export const CALENDAR_DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"];
-export const CALENDAR_DAYS = 5;
+export const CALENDAR_DAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+export const CALENDAR_DAYS = 7;
 
 export const SESSION_STATUS_COLOR: Record<string, string> = {
   CREATED:   "bg-gradient-primary border-l-[3px] border-blue-500 text-white",
@@ -29,9 +29,7 @@ export const SESSION_STATUS_LABEL: Record<string, string> = {
 
 export function getWeekStart(from: Date): Date {
   const d = new Date(from);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day; // snap to Monday
-  d.setDate(d.getDate() + diff);
+  d.setDate(d.getDate() - d.getDay()); // snap to Sunday
   d.setHours(0, 0, 0, 0);
   return d;
 }

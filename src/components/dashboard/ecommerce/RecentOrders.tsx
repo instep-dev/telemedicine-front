@@ -15,7 +15,6 @@ import {
   CaretRightIcon,
   CircleNotchIcon,
   EmptyIcon,
-  FadersHorizontalIcon,
   SealCheckIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -23,6 +22,9 @@ import Link from "next/link";
 import type { CallItemDto } from "@/services/history/history.dto";
 import trimText from "@/hooks/useTrimText";
 import DataEmpty from "@/components/reusable/DataEmpty";
+import useTrimText from "@/hooks/useTrimText";
+import { gethistoryPath } from "@/lib/route";
+import { authStore } from "@/services/auth/auth.store";
 
 type RecentConsultationsProps = {
   rows: CallItemDto[];
@@ -102,11 +104,12 @@ export default function RecentConsultations({
   rows,
   loading = false,
   error = false,
-  seeAllHref = "/history",
+  seeAllHref,
   subtitle = "5 last consultations",
   enableCursorPagination = false,
   pageSize = DEFAULT_PAGE_SIZE,
 }: RecentConsultationsProps) {
+  const resolvedHref = seeAllHref ?? gethistoryPath(authStore.getState().user?.role ?? "DOCTOR");
   const safeRows = useMemo(() => (Array.isArray(rows) ? rows : []), [rows]);
   const normalizedPageSize = Math.max(1, pageSize);
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
@@ -155,7 +158,7 @@ export default function RecentConsultations({
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-cultured bg-card px-4 pb-3 pt-4 sm:px-6">
+    <div className="rounded-lg border border-cultured bg-card px-5 pb-5 pt-5 sm:px-6 sm:pt-6">
       <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-white">
@@ -167,12 +170,8 @@ export default function RecentConsultations({
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-cultured bg-gradient-gray px-4 py-2.5 text-theme-sm font-medium text-white shadow-theme-xs hover:bg-gray-50 hover:hover:opacity-70 transition-all duration-300">
-            <FadersHorizontalIcon />
-            Filter
-          </button>
           <Link
-            href={seeAllHref}
+            href={resolvedHref}
             className="inline-flex items-center gap-2 rounded-lg border border-cultured bg-gradient-gray px-4 py-2.5 text-theme-sm font-medium text-white shadow-theme-xs hover:bg-gray-50 hover:hover:opacity-70 transition-all duration-300"
           >
             <CardsIcon />
@@ -181,6 +180,7 @@ export default function RecentConsultations({
         </div>
       </div>
       <div className="max-w-full overflow-x-auto">
+        <div className="min-w-[580px]">
         <Table className="table-fixed">
           <TableHeader className="border-cultured border-y">
             <TableRow>
@@ -213,7 +213,7 @@ export default function RecentConsultations({
 
           <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
             {rowsToRender.map((item) => {
-              const doctorName = item.doctorName ?? "-";
+              const doctorName = item.doctorName ?? "-"
               const consultationName = formatConsultationName(item);
               const patientName = formatPatientName(item);
               return (
@@ -225,7 +225,7 @@ export default function RecentConsultations({
                           className="font-medium text-white text-theme-sm truncate"
                           title={doctorName}
                         >
-                          {trimText(doctorName, 32)}
+                          {trimText(doctorName, 15)}
                         </p>
                         <SealCheckIcon className="text-xs text-success-400" weight="fill" />
                       </div>
@@ -255,6 +255,7 @@ export default function RecentConsultations({
             })}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {enableCursorPagination && !loading && !error && rowsToRender.length > 0 ? (

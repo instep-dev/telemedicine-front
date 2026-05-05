@@ -5,6 +5,7 @@ import type {
   CreateConsultationSessionBody,
   DoctorOptionDto,
   ListConsultationSessionsParams,
+  NurseOptionDto,
   PatientOptionDto,
 } from "./consultations.dto";
 
@@ -90,6 +91,24 @@ export const consultationsApi = {
   listPatients: async (accessToken: string) => {
     const res = await http.get<PatientOptionDto[]>("/consultations/lookups/patients", {
       headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data;
+  },
+
+  listNurses: async (accessToken: string) => {
+    const res = await http.get<NurseOptionDto[]>("/consultations/lookups/nurses", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data;
+  },
+
+  listNurseSessions: async (
+    accessToken: string,
+    params?: ListConsultationSessionsParams,
+  ) => {
+    const res = await http.get<ConsultationSessionDto[]>("/consultations/sessions/nurse", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params,
     });
     return res.data;
   },

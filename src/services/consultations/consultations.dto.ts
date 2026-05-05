@@ -2,6 +2,8 @@ export type SessionType = "SCHEDULED" | "INSTANT";
 export type ConsultationMode = "VIDEO" | "VOICE";
 export type SessionStatus = "CREATED" | "IN_CALL" | "COMPLETED" | "FAILED";
 
+export type NurseJoinState = "NONE" | "JOIN" | "JOINED" | "DISABLED";
+
 export type ConsultationSessionDto = {
   sessionId: string;
   sessionType: SessionType;
@@ -15,6 +17,11 @@ export type ConsultationSessionDto = {
   doctorName: string | null;
   patientId: string;
   patientName: string | null;
+  nurseId: string | null;
+  nurseName: string | null;
+  nurseJoinedAt: string | null;
+  canNurseJoin: boolean;
+  nurseJoinState: NurseJoinState;
   createdBy: string;
   createdByName: string | null;
   doctorJoinedAt: string | null;
@@ -37,6 +44,7 @@ export type ConsultationSessionDto = {
 export type CreateConsultationSessionBody = {
   doctorId: string;
   patientId: string;
+  nurseId?: string;
   sessionType: SessionType;
   consultationMode: ConsultationMode;
   scheduledDate?: string;
@@ -64,6 +72,14 @@ export type PatientOptionDto = {
   fullName: string;
   email: string;
   phone: string;
+};
+
+export type NurseOptionDto = {
+  userId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  nurseId: string;
 };
 
 export type ConsultationSessionNoteDto = {

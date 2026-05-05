@@ -3,9 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/dashboard/ui/button/Button";
-import { ArrowUpRightIcon, CircleNotchIcon, ClockUserIcon, InfoIcon, SealWarningIcon, UserIcon, CheckIcon, XIcon, EmptyIcon } from "@phosphor-icons/react";
+import {
+  ArrowUpRightIcon,
+  CircleNotchIcon,
+  CheckIcon,
+  SealWarningIcon,
+  InfoIcon,
+  XIcon,
+  EmptyIcon,
+  UserIcon,
+  MagnifyingGlassIcon,
+} from "@phosphor-icons/react";
 import { authStore } from "@/services/auth/auth.store";
-import { useAiResultsQuery, useAiRetryMutation, useAiStatusStream } from "@/services/ai/ai.queries";
+import { useAiResultsQuery, useAiStatusStream } from "@/services/ai/ai.queries";
 import type { AiSsePayload } from "@/services/ai/ai.queries";
 import type { AiResultItemDto } from "@/services/ai/ai.dto";
 import { CalendarCheckIcon } from "@phosphor-icons/react/dist/ssr";
@@ -14,37 +24,15 @@ import { getInitials } from "@/hooks/useInitials";
 import { bucketStatus } from "@/hooks/useBucketStatus";
 import DataEmpty from "@/components/reusable/DataEmpty";
 import trimText from "@/hooks/useTrimText";
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import Input from "@/components/dashboard/form/input/InputField";
-import { toast } from "react-toastify";
-
-// branch fix
-// const CreateRoomButton = () => {
-//   const { handleCreateRoom, isCreating } = useCreateRoom();
-
-//   return (
-//     <Button
-//       onClick={handleCreateRoom}
-//       startIcon={<PlusIcon weight="bold" />}
-//       disabled={isCreating}
-//     >
-//       {isCreating ? "Creating..." : "Create Room"}
-//     </Button>
-//   );
-// };
 
 const ITEMS_PER_PAGE = 10;
 
 function formatDate(date?: string | null) {
   if (!date) return "-";
-
   return new Date(date).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
+    year: "numeric", month: "short", day: "numeric",
+    hour: "numeric", minute: "2-digit", hour12: true,
   });
 }
 
@@ -54,122 +42,40 @@ function normalizeStatus(aiStatus?: string | null) {
 
 function getStatusBucket(aiStatus?: string | null) {
   const value = normalizeStatus(aiStatus);
-
-  if (value === "SUCCESS") {
-    return "success";
-  }
-
-  if (value === "FAILED" || value.includes("ERROR")) {
-    return "failed";
-  }
-
+  if (value === "SUCCESS") return "success";
+  if (value === "FAILED" || value.includes("ERROR")) return "failed";
   return "in-progress";
 }
 
 function getStageLabel(aiStatus?: string | null) {
   const value = normalizeStatus(aiStatus);
-
   if (!value) return "Waiting to start";
   if (value === "PENDING") return "Waiting in queue";
   if (value === "IN_PROGRESS") return "AI processing started";
-  if (value.includes("WAITING_TRANSCRIPT")) return "Waiting for transcript";
-  if (value.includes("WAITING_RECORDING")) return "Waiting for recording";
-  if (value.includes("RECORDING_STARTED")) return "Recording started";
-  if (value.includes("RECORDING_COMPLETED")) return "Recording completed";
-  if (value.includes("COMPOSITION_STARTED")) return "Preparing video composition";
-  if (value.includes("DOWNLOADING_RECORDING")) return "Downloading recording";
-  if (value.includes("MEDIA_READY")) return "Media ready";
-  if (value.includes("EXTRACTING_AUDIO")) return "Extracting audio from MP4";
-  if (value.includes("TRANSCRIBING")) return "Transcribing (Realtime)";
-  if (value.includes("TRANSCRIPTION_READY")) return "Transcript ready";
-  if (value.includes("SUMMARIZING")) return "Generating SOAP summary with Gemini";
   if (value === "SUCCESS") return "Success";
   if (value === "FAILED" || value.includes("ERROR")) return "Failed";
-
   return value.replaceAll("_", " ");
 }
 
-const getLabel = (aiStatus?:string | null) => {
- const value = normalizeStatus(aiStatus);
-
+function getLabel(aiStatus?: string | null) {
+  const value = normalizeStatus(aiStatus);
   if (!value) return "Waiting to start";
   if (value === "PENDING") return "PENDING";
   if (value === "IN_PROGRESS") return "IN PROGRESS";
-  if (value.includes("WAITING_TRANSCRIPT")) return "WAITING TRANSCRIPT";
-  if (value.includes("WAITING_RECORDING")) return "WAITING";
-  if (value.includes("RECORDING_STARTED")) return "RECORDING";
-  if (value.includes("RECORDING_COMPLETED")) return "RECORDING SUCCESS";
-  if (value.includes("COMPOSITION_STARTED")) return "COMPOSITION";
-  if (value.includes("DOWNLOADING_RECORDING")) return "DOWNLOADING";
-  if (value.includes("MEDIA_READY")) return "MEDIA READY";
-  if (value.includes("EXTRACTING_AUDIO")) return "EXTRACTING";
-  if (value.includes("TRANSCRIBING")) return "TRANSCRIBING";
-  if (value.includes("TRANSCRIPTION_READY")) return "TRANSCRIPT";
-  if (value.includes("SUMMARIZING")) return "SUMMARIZING";
   if (value === "SUCCESS") return "Success";
   if (value === "FAILED" || value.includes("ERROR")) return "Failed";
-
   return value.replaceAll("_", " ");
-}
-
-function getEstimatedTimeText(
-  aiStatus?: string | null,
-  createdAt?: string | null,
-  durationSec?: number | null,
-) {
-  const bucket = getStatusBucket(aiStatus);
-  if (bucket === "success") return "Finished";
-  if (bucket === "failed") return "Stopped";
-
-  const status = normalizeStatus(aiStatus);
-  const callMinutes = durationSec ? Math.max(1, Math.ceil(durationSec / 60)) : 1;
-
-  let estimatedTotalSec = 180;
-
-  if (callMinutes <= 2) estimatedTotalSec = 90;
-  else if (callMinutes <= 5) estimatedTotalSec = 150;
-  else if (callMinutes <= 10) estimatedTotalSec = 240;
-  else if (callMinutes <= 20) estimatedTotalSec = 420;
-  else estimatedTotalSec = 600;
-
-  if (status.includes("WAITING_RECORDING")) estimatedTotalSec = 120;
-  if (status.includes("WAITING_TRANSCRIPT")) estimatedTotalSec = 60;
-  if (status.includes("COMPOSITION")) estimatedTotalSec = 150;
-  if (status.includes("DOWNLOADING_RECORDING")) estimatedTotalSec = 90;
-  if (status.includes("EXTRACTING_AUDIO")) estimatedTotalSec = 120;
-  if (status.includes("TRANSCRIBING")) estimatedTotalSec = Math.max(120, Math.floor(estimatedTotalSec * 0.7));
-  if (status.includes("SUMMARIZING")) estimatedTotalSec = Math.max(60, Math.floor(estimatedTotalSec * 0.35));
-
-  if (!createdAt) {
-    const mins = Math.ceil(estimatedTotalSec / 60);
-    return `Estimated ${mins} minutes`;
-  }
-
-  const started = new Date(createdAt).getTime();
-  const now = Date.now();
-  const elapsedSec = Math.max(0, Math.floor((now - started) / 1000));
-  const remainingSec = Math.max(15, estimatedTotalSec - elapsedSec);
-
-  if (remainingSec < 60) return `Estimated ${remainingSec} seconds`;
-
-  const min = Math.floor(remainingSec / 60);
-  const sec = remainingSec % 60;
-
-  if (sec === 0) return `Estimated ${min} minutes`;
-  return `Estimated ${min} minutes ${sec} seconds`;
 }
 
 type TaskCardProps = {
   task: AiResultItemDto;
-  onRetry: (task: AiResultItemDto) => void;
-  isRetrying: boolean;
   onViewSummary: (sessionId: string) => void;
 };
 
-const TaskCard = ({ task, onRetry, isRetrying, onViewSummary }: TaskCardProps) => {
+const TaskCard = ({ task, onViewSummary }: TaskCardProps) => {
   const bucket = getStatusBucket(task.aiStatus);
   const summaryText = trimText(task.summary, 40);
-  const aiErrorText = trimText(task.aiError, 40)
+  const aiErrorText = trimText(task.aiError, 40);
 
   const badgeTone =
     bucket === "success"
@@ -186,11 +92,6 @@ const TaskCard = ({ task, onRetry, isRetrying, onViewSummary }: TaskCardProps) =
         : "bg-yellow-500/10 text-yellow-600 border border-yellow-900";
 
   const stageLabel = getStageLabel(task.aiStatus);
-  const estimateText = getEstimatedTimeText(
-    task.aiStatus,
-    task.createdAt,
-    task.callSession?.durationSec,
-  );
 
   return (
     <div
@@ -200,113 +101,77 @@ const TaskCard = ({ task, onRetry, isRetrying, onViewSummary }: TaskCardProps) =
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-white flex items-center gap-1">
-            <UserIcon weight="fill" className="text-neutral-500"/>
-            <p>{task.patientName || "-"} </p>
+            <UserIcon weight="fill" className="text-neutral-500" />
+            <p>{task.patientName || "-"}</p>
           </div>
-          <div className=" line-clamp-2 text-xs text-neutral-500 flex items-center gap-1">
+          <div className="line-clamp-2 text-xs text-neutral-500 flex items-center gap-1">
             {task.roomName || task.patientIdentity || "-"}
           </div>
-          <p className="mt-1 line-clamp-2 text-xs ">
+          <p className="mt-1 line-clamp-2 text-xs">
             {bucketStatus(bucket, summaryText)}
           </p>
         </div>
-
-        <div
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium ${avatarTone}`}
-        >
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium ${avatarTone}`}>
           {getInitials(task.patientName || task.patientIdentity)}
         </div>
       </div>
 
       <div className="mt-6 rounded-md border border-cultured bg-gradient-to-b from-neutral-900 to-[#1e1e1f] p-4">
-        <p className="text-sm font-medium text-white">
-          {stageLabel}
-        </p>
+        <p className="text-sm font-medium text-white">{stageLabel}</p>
         {bucket === "success" && (
           <div className="mt-2 flex gap-x-2 items-center">
             <div className="w-4 h-4 rounded-full flex items-center justify-center bg-green-500/10 border border-green-900">
-              <CheckIcon className="text-[10px] text-green-600" weight="bold"/>
+              <CheckIcon className="text-[10px] text-green-600" weight="bold" />
             </div>
-            <p className="text-xs text-green-600">
-              {summaryText}
-            </p>
+            <p className="text-xs text-green-600">{summaryText}</p>
           </div>
         )}
         {bucket === "in-progress" && (
           <div className="mt-2 text-xs text-neutral-500 flex items-center gap-x-2">
             <div className="w-4 h-4 rounded-full flex items-center justify-center bg-yellow-500/10 border border-yellow-900">
-              <CircleNotchIcon className="text-xs text-yellow-600 animate-spin" weight="bold"/>
+              <CircleNotchIcon className="text-xs text-yellow-600 animate-spin" weight="bold" />
             </div>
-            {estimateText}
+            Processing...
           </div>
         )}
         {bucket === "failed" && task.aiError && (
-          <div className="mt-2 flex gap-x-2 flex items-center">
+          <div className="mt-2 flex gap-x-2 items-center">
             <div className="w-4 h-4 rounded-full flex items-center justify-center bg-red-500/10 border border-red-950">
-              <SealWarningIcon className="text-xs text-red-600" weight="bold"/>
+              <SealWarningIcon className="text-xs text-red-600" weight="bold" />
             </div>
-            <p className="text-xs text-red-500">
-              {aiErrorText}
-            </p>
+            <p className="text-xs text-red-500">{aiErrorText}</p>
           </div>
         )}
       </div>
 
-      <div className="mt-6 flex  items-center justify-between text-xs text-neutral-500 ">
+      <div className="mt-6 flex items-center justify-between text-xs text-neutral-500">
         <span className="flex items-center gap-1">
-          <CalendarCheckIcon weight="bold"/>
+          <CalendarCheckIcon weight="bold" />
           {formatDate(task.createdAt)}
         </span>
-
-        <div className="w-1 h-1 bg-neutral-500 rounded-full"/>
-
+        <div className="w-1 h-1 bg-neutral-500 rounded-full" />
         <span className="flex items-center gap-1">
-          <ClockUserIcon weight="bold"/>
           {formatDuration(task.callSession?.durationSec)}
         </span>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
-        <span
-          className={`inline-flex uppercase items-center rounded-md px-3 py-1 text-xs font-medium ${badgeTone}`}
-        >
+        <span className={`inline-flex uppercase items-center rounded-md px-3 py-1 text-xs font-medium ${badgeTone}`}>
           {getLabel(task.aiStatus || "unknown")}
         </span>
-
-        <div className="flex items-center gap-2">
-          {bucket === "failed" && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isRetrying}
-              onClick={() => onRetry(task)}
-              startIcon={
-                <CircleNotchIcon
-                  className={isRetrying ? "animate-spin" : ""}
-                />
-              }
-            >
-              {isRetrying ? "Retrying..." : "Retry"}
+        {bucket === "success" && task.consultationId && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Button size="sm" onClick={() => onViewSummary(task.consultationId)} endIcon={<ArrowUpRightIcon weight="bold" />}>
+              View Summary
             </Button>
-          )}
-          {bucket === "success" && task.consultationId && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <button 
-                onClick={() => onViewSummary(task.consultationId)}
-                className="px-2 py-1 border border-cultured bg-gradient-card rounded-md flex items-center gap-x-0.5 text-xs"
-                >
-                View Summary
-                <ArrowUpRightIcon/>
-              </button>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default function AiSummary() {
+export default function NurseAiSummaryPage() {
   const router = useRouter();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -316,7 +181,6 @@ export default function AiSummary() {
   const [sseActive, setSseActive] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [retryingId, setRetryingId] = useState<string | null>(null);
   const isLoadingMoreRef = useRef(false);
   const cursorRef = useRef<string | undefined>(undefined);
   const prevSearchQueryRef = useRef("");
@@ -328,22 +192,13 @@ export default function AiSummary() {
 
   useEffect(() => {
     setAccessToken(authStore.getState().accessToken);
-
-    const unsubscribe = authStore.subscribe((state) => {
-      setAccessToken(state.accessToken);
-    });
-
+    const unsubscribe = authStore.subscribe((state) => setAccessToken(state.accessToken));
     return () => unsubscribe();
   }, []);
 
   const { data, isLoading, error, isFetching } = useAiResultsQuery(
     accessToken,
-    {
-      limit: ITEMS_PER_PAGE,
-      sort: "newest",
-      cursor,
-      search: searchQuery ? searchQuery : undefined,
-    },
+    { limit: ITEMS_PER_PAGE, sort: "newest", cursor, search: searchQuery || undefined },
     true,
     false, // polling disabled — SSE handles live updates
   );
@@ -369,8 +224,6 @@ export default function AiSummary() {
       ),
     );
   });
-
-  const retryMutation = useAiRetryMutation(accessToken);
 
   // Accumulate fetched pages into allItems
   useEffect(() => {
@@ -398,27 +251,7 @@ export default function AiSummary() {
   }, [data]);
 
   const handleViewSummary = (sessionId: string) => {
-    router.push(`/doctor/summary-results/${sessionId}`);
-  };
-
-  const handleRetry = (task: AiResultItemDto) => {
-    if (!task.consultationId) return;
-    if (retryMutation.isPending) return;
-
-    setRetryingId(task.id);
-    retryMutation.mutate(task.consultationId, {
-      onSuccess: () => {
-        toast.info("Retry queued");
-      },
-      onError: (err: any) => {
-        const message =
-          err?.response?.data?.message ?? err?.message ?? "Retry failed";
-        toast.error(message);
-      },
-      onSettled: () => {
-        setRetryingId(null);
-      },
-    });
+    router.push(`/nurse/summary-results/${sessionId}`);
   };
 
   const handleShowMore = () => {
@@ -445,20 +278,17 @@ export default function AiSummary() {
       setDisplayLimit(ITEMS_PER_PAGE);
       isLoadingMoreRef.current = false;
     }, 400);
-
     return () => clearTimeout(timer);
   }, [searchInput]);
 
 
   const visibleItems = allItems.slice(0, displayLimit);
 
-  const grouped = useMemo(() => {
-    return {
-      success: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "success"),
-      inProgress: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "in-progress"),
-      failed: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "failed"),
-    };
-  }, [visibleItems]);
+  const grouped = useMemo(() => ({
+    success: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "success"),
+    inProgress: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "in-progress"),
+    failed: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "failed"),
+  }), [visibleItems]);
 
   const filterData = [
     { title: "All", value: "all", count: visibleItems.length },
@@ -468,44 +298,21 @@ export default function AiSummary() {
   ];
 
   const kanbanColumns = [
-    {
-      key: "in-progress",
-      title: "In Progress",
-      count: grouped.inProgress.length,
-      tone: "bg-yellow-500/10 text-yellow-600 border border-yellow-900",
-      tasks: grouped.inProgress,
-    },
-    {
-      key: "success",
-      title: "Success",
-      count: grouped.success.length,
-      tone: "bg-green-500/10 text-green-600 border border-green-900",
-      tasks: grouped.success,
-    },
-    {
-      key: "failed",
-      title: "Failed",
-      count: grouped.failed.length,
-      tone: "bg-red-500/10 text-red-600 border border-red-950",
-      tasks: grouped.failed,
-    },
-  ].filter((column) => activeFilter === "all" || activeFilter === column.key);
+    { key: "in-progress", title: "In Progress", count: grouped.inProgress.length, tone: "bg-yellow-500/10 text-yellow-600 border border-yellow-900", tasks: grouped.inProgress },
+    { key: "success", title: "Success", count: grouped.success.length, tone: "bg-green-500/10 text-green-600 border border-green-900", tasks: grouped.success },
+    { key: "failed", title: "Failed", count: grouped.failed.length, tone: "bg-red-500/10 text-red-600 border border-red-950", tasks: grouped.failed },
+  ].filter((col) => activeFilter === "all" || activeFilter === col.key);
 
   const isAllView = activeFilter === "all";
   const singleColumn = !isAllView ? kanbanColumns[0] : null;
-  const displayedCount = isAllView
-    ? visibleItems.length
-    : singleColumn?.tasks.length ?? 0;
+  const displayedCount = isAllView ? visibleItems.length : (singleColumn?.tasks.length ?? 0);
 
   const canShowMore = displayLimit < allItems.length || (data?.pagination?.hasMore ?? false);
   const canShowLess = displayLimit > ITEMS_PER_PAGE;
 
   return (
     <main>
-      {/* <PageBreadcrumb pageTitle="AI Summary" /> */}
-
       <div className="rounded-tl-lg rounded-tr-lg border-x border-t border-cultured bg-card h-auto">
-
         <div className="p-4 sm:p-6 space-y-4">
           <div className="relative w-full md:max-w-xs">
             <Input
@@ -532,9 +339,7 @@ export default function AiSummary() {
                     <button
                       key={item.value}
                       onClick={() => setActiveFilter(item.value)}
-                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium whitespace-nowrap transition-all duration-200 ${
-                        isActive ? "bg-gradient-gray text-white shadow-theme-xs" : "text-accent"
-                      }`}
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium whitespace-nowrap transition-all duration-200 ${isActive ? "bg-gradient-gray text-white shadow-theme-xs" : "text-accent"}`}
                     >
                       <span>{item.title}</span>
                       <span className={`flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-semibold ${isActive ? color[i] : ""}`}>
@@ -546,7 +351,7 @@ export default function AiSummary() {
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-cultured bg-card text-xs text-neutral-400 shrink-0">
-              <span className={`w-2 h-2 rounded-full ${sseActive ? "bg-success-500 animate-pulse" : "bg-neutral-600"}`} />
+              <span className={`w-2 h-2 rounded-full ${sseActive ? "bg-green-500 animate-pulse" : "bg-neutral-600"}`} />
               <span className="hidden sm:inline">{sseActive ? "Live" : "Connecting"}</span>
             </div>
           </div>
@@ -554,27 +359,17 @@ export default function AiSummary() {
 
         {grouped.inProgress.length > 0 && (
           <div className="mx-4 sm:mx-6 mb-4 rounded-lg border border-yellow-900 bg-gradient-to-r from-yellow-500/10 to-bg-card px-4 py-3 text-sm text-yellow-600 flex items-center gap-x-2">
-            <div className="w-4 h-4 flex items-center justify-center">
-              <InfoIcon className="text-base "/>
-            </div>
-            <p>
-              <span className="font-semibold mr-1.5">{grouped.inProgress.length}</span>Consultations AI Summary background process
-            </p>
+            <InfoIcon className="text-base" />
+            <p><span className="font-semibold mr-1.5">{grouped.inProgress.length}</span>Consultations AI Summary background process</p>
           </div>
         )}
 
         {isLoading ? (
-          <div className="p-6">
-            <DataEmpty ItemIcon={CircleNotchIcon} value="Loading" subValue="AI Summaries" />
-          </div>
+          <div className="p-6"><DataEmpty ItemIcon={CircleNotchIcon} value="Loading" subValue="AI Summaries" /></div>
         ) : error ? (
-          <div className="p-6">
-            <DataEmpty ItemIcon={XIcon} value="Failed to load" subValue="Summaries" />
-          </div>
+          <div className="p-6"><DataEmpty ItemIcon={XIcon} value="Failed to load" subValue="Summaries" /></div>
         ) : displayedCount === 0 ? (
-          <div className="p-6">
-            <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="Starts consultations" />
-          </div>
+          <div className="p-6"><DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="No assigned sessions yet" /></div>
         ) : (
           <>
             {isAllView ? (
@@ -583,20 +378,18 @@ export default function AiSummary() {
                 <div className="flex items-start gap-4 overflow-x-auto px-4 py-4 sm:hidden no-scrollbar snap-x snap-mandatory">
                   {kanbanColumns.map((column) => (
                     <div key={column.key} className="min-w-[82vw] snap-start space-y-3 rounded-lg border border-cultured bg-card/50 p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-semibold text-white">{column.title}</h3>
-                          <span className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${column.tone}`}>
-                            {column.count}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-white">{column.title}</h3>
+                        <span className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${column.tone}`}>
+                          {column.count}
+                        </span>
                       </div>
                       <div className="space-y-3">
                         {column.tasks.length === 0 ? (
-                          <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="Starts consultations" />
+                          <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="No results" />
                         ) : (
                           column.tasks.map((task) => (
-                            <TaskCard key={task.id} task={task} onRetry={handleRetry} isRetrying={retryingId === task.id} onViewSummary={handleViewSummary} />
+                            <TaskCard key={task.id} task={task} onViewSummary={handleViewSummary} />
                           ))
                         )}
                       </div>
@@ -607,21 +400,18 @@ export default function AiSummary() {
                 <div className="hidden sm:grid gap-6 p-6 lg:grid-cols-3">
                   {kanbanColumns.map((column) => (
                     <div key={column.key} className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-sm font-semibold text-white">{column.title}</h3>
-                          <span className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${column.tone}`}>
-                            {column.count}
-                          </span>
-                        </div>
-                        <button className="rounded-full px-2 text-accent hover:text-white">...</button>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-sm font-semibold text-white">{column.title}</h3>
+                        <span className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${column.tone}`}>
+                          {column.count}
+                        </span>
                       </div>
                       <div className="space-y-4">
                         {column.tasks.length === 0 ? (
-                          <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="Starts consultations" />
+                          <DataEmpty ItemIcon={EmptyIcon} value="Data Empty" subValue="No results" />
                         ) : (
                           column.tasks.map((task) => (
-                            <TaskCard key={task.id} task={task} onRetry={handleRetry} isRetrying={retryingId === task.id} onViewSummary={handleViewSummary} />
+                            <TaskCard key={task.id} task={task} onViewSummary={handleViewSummary} />
                           ))
                         )}
                       </div>
@@ -641,7 +431,7 @@ export default function AiSummary() {
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {singleColumn.tasks.map((task) => (
-                        <TaskCard key={task.id} task={task} onRetry={handleRetry} isRetrying={retryingId === task.id} onViewSummary={handleViewSummary} />
+                        <TaskCard key={task.id} task={task} onViewSummary={handleViewSummary} />
                       ))}
                     </div>
                   </>

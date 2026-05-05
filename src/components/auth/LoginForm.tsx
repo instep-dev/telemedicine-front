@@ -15,6 +15,7 @@ const roleLabels: Record<UserRole, string> = {
   DOCTOR: "Doctor",
   ADMIN: "Admin",
   PATIENT: "Patient",
+  NURSE: "Nurse",
 };
 
 export default function LoginForm({ role }: { role: UserRole }) {

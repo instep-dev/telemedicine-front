@@ -19,6 +19,7 @@ const roles: { label: string; value: UserRole }[] = [
   { label: "Doctor", value: "DOCTOR" },
   { label: "Admin", value: "ADMIN" },
   { label: "Patient", value: "PATIENT" },
+  { label: "Nurse", value: "NURSE" },
 ];
 
 export default function AuthRoleLayout({
@@ -46,8 +47,8 @@ export default function AuthRoleLayout({
   }, [initialRole]);
 
   return (
-    <div className="py-6 px-12 flex flex-col justify-between gap-y-12">
-      <div className="text-sm text-right text-accent flex items-center gap-x-1 justify-end">
+    <div className="py-6 px-4 sm:px-8 lg:px-12 flex flex-col justify-between gap-y-6 sm:gap-y-12 min-h-screen">
+      <div className="text-sm text-accent flex items-center gap-x-1 justify-center sm:justify-end">
         {promptText}{" "}
         <div className="relative group">
           <Link className="text-white" href={`${promptHrefBase}?role=${role}`}>
@@ -58,12 +59,12 @@ export default function AuthRoleLayout({
       </div>
       <div>
         <div className="text-center">
-          <h3 className="text-3xl mb-2">{title}</h3>
+          <h3 className="text-2xl sm:text-3xl mb-2">{title}</h3>
           <p className="text-accent text-sm">{subtitle}</p>
         </div>
         <div className="flex max-w-xs border mx-auto bg-card rounded-lg p-1 border-cultured my-6 relative">
           <div
-            className="absolute top-1 bottom-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-md bg-gradient-primary transition-transform duration-300 ease-out will-change-transform"
+            className="absolute top-1 bottom-1 left-1 w-[calc((100%-0.5rem)/4)] rounded-md bg-gradient-primary transition-transform duration-300 ease-out will-change-transform"
             style={{ transform: `translateX(${activeRoleIndex * 100}%)` }}
           />
           {roles.map((item) => (

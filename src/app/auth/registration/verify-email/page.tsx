@@ -67,7 +67,7 @@ function VerifyEmailPageContent() {
   }
 
   return (
-    <div className="py-6 px-12 flex flex-col justify-between">
+    <div className="py-6 px-4 sm:px-8 lg:px-12 flex flex-col justify-between min-h-screen">
       <div className="text-sm text-right text-accent flex items-center justify-between">
         <button
           onClick={() => router.back()}
@@ -83,7 +83,7 @@ function VerifyEmailPageContent() {
 
       <div>
         <div className="text-center mb-6">
-          <h3 className="text-3xl mb-2">Email Verification</h3>
+          <h3 className="text-2xl sm:text-3xl mb-2">Email Verification</h3>
           <p className="text-accent text-sm max-w-xs text-center mx-auto">
             Enter the 6-digit verification code sent to your email address.
           </p>

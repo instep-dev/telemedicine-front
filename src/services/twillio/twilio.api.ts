@@ -4,6 +4,8 @@ import type {
   DoctorTokenBody,
   DoctorTokenResponse,
   EndCallResponse,
+  NurseTokenBody,
+  NurseTokenResponse,
   PatientTokenBody,
   PatientTokenResponse,
   VideoTranscriptionPayload,
@@ -12,6 +14,13 @@ import type {
 export const twilioApi = {
   getDoctorToken: async (accessToken: string, body: DoctorTokenBody) => {
     const res = await http.post<DoctorTokenResponse>("/twilio/video/doctor-token", body, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data;
+  },
+
+  getNurseToken: async (accessToken: string, body: NurseTokenBody) => {
+    const res = await http.post<NurseTokenResponse>("/twilio/video/nurse-token", body, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     return res.data;

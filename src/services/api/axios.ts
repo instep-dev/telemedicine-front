@@ -17,8 +17,23 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
+function isJwtStillValid(token: string): boolean {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return false;
+    let base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = base64.length % 4;
+    if (pad) base64 += "=".repeat(4 - pad);
+    const data = JSON.parse(atob(base64)) as { exp?: number };
+    return !!data.exp && data.exp * 1000 - Date.now() > 1_000;
+  } catch {
+    return false;
+  }
+}
+
 let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+type QueueEntry = { resolve: (token: string) => void; reject: (err: unknown) => void };
+let refreshQueue: Array<QueueEntry> = [];
 
 http.interceptors.response.use(
   (res) => res,
@@ -34,10 +49,13 @@ http.interceptors.response.use(
     original._retry = true;
 
     if (isRefreshing) {
-      return new Promise((resolve) => {
-        refreshQueue.push((token) => {
-          original.headers.Authorization = `Bearer ${token}`;
-          resolve(http(original));
+      return new Promise((resolve, reject) => {
+        refreshQueue.push({
+          resolve: (token) => {
+            original.headers.Authorization = `Bearer ${token}`;
+            resolve(http(original));
+          },
+          reject,
         });
       });
     }
@@ -47,16 +65,25 @@ http.interceptors.response.use(
       const res = await http.post<{ accessToken: string }>("/auth/refresh");
       const newToken = res.data.accessToken;
       authStore.getState().setAuth({ accessToken: newToken });
-      refreshQueue.forEach((cb) => cb(newToken));
+      refreshQueue.forEach(({ resolve }) => resolve(newToken));
       refreshQueue = [];
       original.headers.Authorization = `Bearer ${newToken}`;
       return http(original);
-    } catch {
-      authStore.getState().clear();
-      if (typeof window !== "undefined") {
-        window.location.href = "/auth/login";
+    } catch (err) {
+      // Fallback: if stored token is still valid use it and retry
+      const { accessToken: storedToken } = authStore.getState();
+      if (storedToken && isJwtStillValid(storedToken)) {
+        authStore.getState().setAuth({ accessToken: storedToken });
+        refreshQueue.forEach(({ resolve }) => resolve(storedToken));
+        refreshQueue = [];
+        original.headers.Authorization = `Bearer ${storedToken}`;
+        return http(original);
       }
-      return Promise.reject(error);
+      // Drain queue so all waiting requests reject instead of hanging forever
+      refreshQueue.forEach(({ reject }) => reject(err));
+      refreshQueue = [];
+      authStore.getState().clear();
+      return Promise.reject(err);
     } finally {
       isRefreshing = false;
     }
