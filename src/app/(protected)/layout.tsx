@@ -58,27 +58,26 @@ export default function ProtectedLayout({
     const expMs = getJwtExpiryMs(accessToken);
     if (!expMs) return;
 
-    const logoutGraceMs = 1000;
-    const timeoutMs = expMs - Date.now() - logoutGraceMs;
+    const refreshGraceMs = 30_000; // refresh 30 detik sebelum expired
+    const timeoutMs = expMs - Date.now() - refreshGraceMs;
 
-    const triggerLogout = async () => {
+    const triggerSilentRefresh = async () => {
       try {
-        await authApi.logout(accessToken);
+        const { accessToken: newToken, user } = await authApi.refresh();
+        authStore.getState().setAuth({ accessToken: newToken, user });
       } catch {
-        // ignore errors; we still clear local session
-      } finally {
         authStore.getState().clear();
         router.replace(`${LoginRoutes.login}`);
       }
     };
 
     if (timeoutMs <= 0) {
-      void triggerLogout();
+      void triggerSilentRefresh();
       return;
     }
 
     const timer = setTimeout(() => {
-      void triggerLogout();
+      void triggerSilentRefresh();
     }, timeoutMs);
 
     return () => clearTimeout(timer);

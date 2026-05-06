@@ -107,7 +107,7 @@ export default function LoginForm({ role }: { role: UserRole }) {
           onChange={(e) => setRememberMe(e.target.checked)}
         />
         <label htmlFor="rememberMe" className="text-xs text-accent cursor-pointer">
-          Remember me for 10 days
+          Remember me for 30 days
         </label>
       </div>
 
