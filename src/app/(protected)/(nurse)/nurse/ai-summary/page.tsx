@@ -161,9 +161,13 @@ const TaskCard = ({ task, onViewSummary }: TaskCardProps) => {
         </span>
         {bucket === "success" && task.consultationId && (
           <div onClick={(e) => e.stopPropagation()}>
-            <Button size="sm" onClick={() => onViewSummary(task.consultationId)} endIcon={<ArrowUpRightIcon weight="bold" />}>
+            <button
+              onClick={() => onViewSummary(task.consultationId)}
+              className="px-2 py-1.5 border border-cultured bg-gradient-card rounded-md flex items-center gap-x-0.5 text-xs"
+            >
               View Summary
-            </Button>
+              <ArrowUpRightIcon />
+            </button>
           </div>
         )}
       </div>
@@ -196,17 +200,25 @@ export default function NurseAiSummaryPage() {
     return () => unsubscribe();
   }, []);
 
-  const { data, isLoading, error, isFetching } = useAiResultsQuery(
+  const { data, isLoading, error, isFetching, refetch } = useAiResultsQuery(
     accessToken,
     { limit: ITEMS_PER_PAGE, sort: "newest", cursor, search: searchQuery || undefined },
     true,
-    false, // polling disabled — SSE handles live updates
+    false,
   );
+
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
 
   useAiStatusStream(accessToken, (payload: AiSsePayload) => {
     setSseActive(true);
-    setAllItems(prev =>
-      prev.map(item =>
+    setAllItems(prev => {
+      const exists = prev.some(item => item.id === payload.noteId);
+      if (!exists) {
+        setTimeout(() => refetchRef.current(), 0);
+        return prev;
+      }
+      return prev.map(item =>
         item.id === payload.noteId
           ? {
               ...item,
@@ -221,8 +233,8 @@ export default function NurseAiSummaryPage() {
               transcribedAt: payload.transcribedAt ?? item.transcribedAt,
             }
           : item,
-      ),
-    );
+      );
+    });
   });
 
   // Accumulate fetched pages into allItems
@@ -377,7 +389,7 @@ export default function NurseAiSummaryPage() {
                 {/* Mobile: horizontal swipe kanban */}
                 <div className="flex items-start gap-4 overflow-x-auto px-4 py-4 sm:hidden no-scrollbar snap-x snap-mandatory">
                   {kanbanColumns.map((column) => (
-                    <div key={column.key} className="min-w-[82vw] snap-start space-y-3 rounded-lg border border-cultured bg-card/50 p-4">
+                    <div key={column.key} className="min-w-[82vw] snap-center space-y-3 rounded-lg border border-cultured bg-card/50 p-4">
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-semibold text-white">{column.title}</h3>
                         <span className={`flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${column.tone}`}>
