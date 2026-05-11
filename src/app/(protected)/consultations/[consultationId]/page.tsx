@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Video, { type RemoteParticipant, type RemoteTrack, type Room } from "twilio-video";
 import { authStore } from "@/services/auth/auth.store";
@@ -22,6 +22,52 @@ import {
   CircleNotchIcon,
   CheckIcon,
 } from "@phosphor-icons/react";
+
+// ─── RemoteParticipantTile ───────────────────────────────────────────────────
+// Dedicated stable component per remote participant. Uses useRef for the video
+// container so parent re-renders never trigger inline ref callbacks that would
+// clear and re-attach the video element (which caused the flickering).
+
+interface RemoteParticipantTileProps {
+  sid: string;
+  displayName: string;
+  isSplitView: boolean;
+  onMount: (sid: string, el: HTMLDivElement) => void;
+  onUnmount: (sid: string) => void;
+}
+
+const RemoteParticipantTile = React.memo(function RemoteParticipantTile({
+  sid,
+  displayName,
+  isSplitView,
+  onMount,
+  onUnmount,
+}: RemoteParticipantTileProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Keep the latest callbacks in refs so the effect deps stay stable
+  const onMountRef = useRef(onMount);
+  const onUnmountRef = useRef(onUnmount);
+  onMountRef.current = onMount;
+  onUnmountRef.current = onUnmount;
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (el) onMountRef.current(sid, el);
+    return () => onUnmountRef.current(sid);
+  }, [sid]); // only re-runs if the participant identity changes
+
+  return (
+    <div className={isSplitView ? "relative flex-1 overflow-hidden" : "absolute inset-0"}>
+      <div ref={containerRef} className="w-full h-full" />
+      <div className="absolute bottom-3 left-3 pointer-events-none">
+        <span className="bg-black/50 backdrop-blur-sm text-white/90 text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg">
+          {displayName}
+        </span>
+      </div>
+    </div>
+  );
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 type DeviceOption = { deviceId: string; label: string };
 type RemoteParticipantEntry = { sid: string; identity: string };
@@ -71,6 +117,8 @@ export default function ConsultationSessionPage() {
   const hasStartedRef = useRef(false);
   const transcriptionBufferRef = useRef<string[]>([]);
   const transcriptionFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Maps Twilio identity strings to display names, populated from token response
+  const participantNamesRef = useRef<Record<string, string>>({});
 
   const isDoctor = user?.role === "DOCTOR";
   const isPatient = user?.role === "PATIENT";
@@ -91,6 +139,7 @@ export default function ConsultationSessionPage() {
     return () => clearInterval(id);
   }, [connected]);
 
+  // Enumerate devices and detect which ones are currently active
   useEffect(() => {
     if (!connected) return;
     navigator.mediaDevices
@@ -106,6 +155,18 @@ export default function ConsultationSessionPage() {
             .filter((d) => d.kind === "videoinput")
             .map((d) => ({ deviceId: d.deviceId, label: d.label })),
         );
+        // Mark the currently active devices as selected
+        const room = roomRef.current;
+        if (room) {
+          for (const pub of room.localParticipant.audioTracks.values()) {
+            const deviceId = (pub.track as any)?.mediaStreamTrack?.getSettings?.()?.deviceId;
+            if (deviceId) { setSelectedAudioId(deviceId); break; }
+          }
+          for (const pub of room.localParticipant.videoTracks.values()) {
+            const deviceId = (pub.track as any)?.mediaStreamTrack?.getSettings?.()?.deviceId;
+            if (deviceId) { setSelectedVideoId(deviceId); break; }
+          }
+        }
       })
       .catch(() => {});
   }, [connected]);
@@ -257,24 +318,24 @@ export default function ConsultationSessionPage() {
     }
   }
 
-  const setRemoteContainerRef = useCallback((sid: string, el: HTMLElement | null) => {
-    if (el) {
-      remoteContainersRef.current.set(sid, el);
-      const room = roomRef.current;
-      if (room) {
-        const participant = room.participants.get(sid);
-        if (participant) {
-          participant.tracks.forEach((pub: any) => {
-            if (pub.isSubscribed && pub.track && pub.track.kind === "video") {
-              attachRemoteVideo(pub.track, el);
-            }
-          });
-        }
+  // Registered by RemoteParticipantTile on mount — attaches any already-subscribed video
+  const handleRemoteMount = useCallback((sid: string, el: HTMLDivElement) => {
+    remoteContainersRef.current.set(sid, el);
+    const room = roomRef.current;
+    if (!room) return;
+    const participant = room.participants.get(sid);
+    if (!participant) return;
+    participant.tracks.forEach((pub: any) => {
+      if (pub.isSubscribed && pub.track && pub.track.kind === "video") {
+        attachRemoteVideo(pub.track, el);
       }
-    } else {
-      remoteContainersRef.current.delete(sid);
-    }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Registered by RemoteParticipantTile on unmount
+  const handleRemoteUnmount = useCallback((sid: string) => {
+    remoteContainersRef.current.delete(sid);
   }, []);
 
   function handleRemoteParticipant(participant: RemoteParticipant) {
@@ -285,9 +346,10 @@ export default function ConsultationSessionPage() {
       return [...prev, { sid: participant.sid, identity: participant.identity ?? "" }];
     });
 
+    // Handle already-subscribed audio tracks immediately; video is handled on tile mount
     participant.tracks.forEach((pub: any) => {
       if (isCleaningRef.current) return;
-      if (pub.isSubscribed && pub.track) {
+      if (pub.isSubscribed && pub.track && pub.track.kind === "audio") {
         attachTrackToParticipant(participant.sid, pub.track as RemoteTrack);
       }
     });
@@ -321,6 +383,11 @@ export default function ConsultationSessionPage() {
         : await patientTokenMutation.mutateAsync({ sessionId });
       const mode = tokenData.consultationMode ?? "VIDEO";
       setConsultationMode(mode);
+
+      // Populate identity → display name lookup before any participants render
+      if (tokenData.participantNames) {
+        Object.assign(participantNamesRef.current, tokenData.participantNames);
+      }
 
       let room: Room;
       let actuallyVideo = mode === "VIDEO";
@@ -432,6 +499,7 @@ export default function ConsultationSessionPage() {
     if (!room) return;
     try {
       for (const pub of room.localParticipant.audioTracks.values()) {
+        if (!pub.track) continue;
         await (pub.track as any).restart({ deviceId: { exact: deviceId } });
         break;
       }
@@ -445,8 +513,9 @@ export default function ConsultationSessionPage() {
     if (!room) return;
     try {
       for (const pub of room.localParticipant.videoTracks.values()) {
+        if (!pub.track) continue;
+        // restart() updates the existing attached video elements automatically
         await (pub.track as any).restart({ deviceId: { exact: deviceId } });
-        attachLocalVideo(room);
         break;
       }
     } catch {}
@@ -470,8 +539,6 @@ export default function ConsultationSessionPage() {
 
   const isConnecting = !connected && !errMsg;
   const hasRemote = remoteParticipants.length > 0;
-  // Split view when nurse joins (3 participants total: doctor + patient + nurse).
-  // On mobile portrait we stack vertically; on sm+ we go side-by-side.
   const isSplitView = remoteParticipants.length >= 2;
 
   // ── UI ───────────────────────────────────────────────────────────────────────
@@ -496,20 +563,14 @@ export default function ConsultationSessionPage() {
           }`}
         >
           {remoteParticipants.map(({ sid, identity }) => (
-            <div
+            <RemoteParticipantTile
               key={sid}
-              className={isSplitView ? "relative flex-1 overflow-hidden" : "absolute inset-0"}
-            >
-              <div
-                ref={(el) => setRemoteContainerRef(sid, el as HTMLElement | null)}
-                className="w-full h-full"
-              />
-              <div className="absolute bottom-3 left-3 pointer-events-none">
-                <span className="bg-black/50 backdrop-blur-sm text-white/90 text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg">
-                  {identity}
-                </span>
-              </div>
-            </div>
+              sid={sid}
+              displayName={participantNamesRef.current[identity] ?? identity}
+              isSplitView={isSplitView}
+              onMount={handleRemoteMount}
+              onUnmount={handleRemoteUnmount}
+            />
           ))}
         </div>
 
@@ -522,7 +583,9 @@ export default function ConsultationSessionPage() {
             </div>
             {isVoiceMode && hasRemote && (
               <p className="text-white/70 text-sm sm:text-base font-medium">
-                {remoteParticipants.map((p) => p.identity).join(", ")}
+                {remoteParticipants
+                  .map((p) => participantNamesRef.current[p.identity] ?? p.identity)
+                  .join(", ")}
               </p>
             )}
             <p className="text-white/30 text-xs sm:text-sm text-center px-6">
@@ -580,7 +643,7 @@ export default function ConsultationSessionPage() {
       {/* ═══ BOTTOM CONTROL BAR ═══ */}
       <div className="shrink-0 bg-[#202124] border-t border-white/[0.06] flex items-center px-3 sm:px-5 gap-2 h-[60px] sm:h-[72px]">
 
-        {/* Left: session info — timer always visible, title & ID hidden on small screens */}
+        {/* Left: session info */}
         <div className="flex-1 flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-hidden">
           <span className="text-white/90 text-xs sm:text-sm font-medium truncate hidden sm:block max-w-[120px] lg:max-w-[160px]">
             {pageTitle}
@@ -643,7 +706,6 @@ export default function ConsultationSessionPage() {
                   ? <MicrophoneIcon size={18} weight="fill" />
                   : <MicrophoneSlashIcon size={18} weight="fill" />}
               </button>
-              {/* Device picker caret — hidden on mobile to keep bar clean */}
               <button
                 onClick={() => { setShowAudioMenu((v) => !v); setShowVideoMenu(false); }}
                 disabled={!connected}
@@ -700,7 +762,6 @@ export default function ConsultationSessionPage() {
                     ? <VideoCameraIcon size={18} weight="fill" />
                     : <VideoCameraSlashIcon size={18} weight="fill" />}
                 </button>
-                {/* Device picker caret — hidden on mobile */}
                 <button
                   onClick={() => { setShowVideoMenu((v) => !v); setShowAudioMenu(false); }}
                   disabled={!connected}

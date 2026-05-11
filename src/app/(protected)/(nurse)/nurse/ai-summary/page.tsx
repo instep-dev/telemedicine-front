@@ -18,6 +18,7 @@ import { authStore } from "@/services/auth/auth.store";
 import { useAiResultsQuery, useAiStatusStream } from "@/services/ai/ai.queries";
 import type { AiSsePayload } from "@/services/ai/ai.queries";
 import type { AiResultItemDto } from "@/services/ai/ai.dto";
+import { aiApi } from "@/services/ai/ai.api";
 import { CalendarCheckIcon } from "@phosphor-icons/react/dist/ssr";
 import { formatDuration } from "@/hooks/useDurationFormat";
 import { getInitials } from "@/hooks/useInitials";
@@ -301,6 +302,31 @@ export default function NurseAiSummaryPage() {
     inProgress: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "in-progress"),
     failed: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "failed"),
   }), [visibleItems]);
+
+  const hasInProgressItems = grouped.inProgress.length > 0;
+
+  // Polling fallback: SSE can miss events if AI finishes before connection is established.
+  // Poll every 5s when items are still in-progress to guarantee real-time status sync.
+  useEffect(() => {
+    if (!hasInProgressItems || !accessToken) return;
+
+    const poll = async () => {
+      try {
+        const fresh = await aiApi.getAiResults(accessToken, {
+          limit: ITEMS_PER_PAGE,
+          sort: "newest",
+          search: searchQuery || undefined,
+        });
+        setAllItems(prev => {
+          const freshById = new Map(fresh.data.map(i => [i.id, i]));
+          return prev.map(i => freshById.get(i.id) ?? i);
+        });
+      } catch {}
+    };
+
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [hasInProgressItems, accessToken, searchQuery]);
 
   const filterData = [
     { title: "All", value: "all", count: visibleItems.length },

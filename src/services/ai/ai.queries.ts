@@ -94,6 +94,7 @@ export function useAiStatusStream(
 
     let cancelled = false;
     let retryDelay = 2000;
+    let activeController: AbortController | null = null;
 
     const connect = async () => {
       if (cancelled) return;
@@ -101,6 +102,7 @@ export function useAiStatusStream(
       const baseUrl = process.env.NEXT_PUBLIC_NEST_API ?? "";
       const url = `${baseUrl}/ai-results/stream`;
       const controller = new AbortController();
+      activeController = controller;
 
       try {
         const response = await fetch(url, {
@@ -157,6 +159,7 @@ export function useAiStatusStream(
 
     return () => {
       cancelled = true;
+      activeController?.abort();
     };
   }, [accessToken]);
 }
