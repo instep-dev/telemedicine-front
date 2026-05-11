@@ -124,8 +124,14 @@ const inferRoleFromPathname = (pathname: string): UserRole => {
 };
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (isMobileOpen) {
+      toggleMobileSidebar();
+    }
+  }, [pathname]);
   const { user } = useAuthSnapshot();
 
   const role = user?.role ?? inferRoleFromPathname(pathname);

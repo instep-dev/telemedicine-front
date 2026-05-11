@@ -20,6 +20,7 @@ export type TokenResponse = {
   sessionId: string;
   consultationMode: "VIDEO" | "VOICE";
   sessionType: "SCHEDULED" | "INSTANT";
+  participantNames?: Record<string, string>;
 };
 
 export type DoctorTokenResponse = TokenResponse;

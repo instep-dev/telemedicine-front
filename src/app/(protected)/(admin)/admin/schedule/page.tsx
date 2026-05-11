@@ -27,6 +27,10 @@ import {
   CircleNotchIcon,
   VideoCameraIcon,
   PhoneIcon,
+  CopyIcon,
+  CheckIcon,
+  CheckCircleIcon,
+  LinkIcon,
 } from "@phosphor-icons/react";
 import Input from "@/components/dashboard/form/input/InputField";
 import WeeklyCalendar from "@/components/dashboard/tables/WeeklyCalendar";
@@ -58,48 +62,42 @@ export default function AdminSchedulePage() {
   const [doctorOptions, setDoctorOptions] = useState<DoctorOptionDto[]>([]);
   const [patientOptions, setPatientOptions] = useState<PatientOptionDto[]>([]);
   const [nurseOptions, setNurseOptions] = useState<NurseOptionDto[]>([]);
-  const [lookupLoaded, setLookupLoaded] = useState(false);
+
+  const fetchLookupData = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const [docs, pats, nurses] = await Promise.all([
+        consultationsApi.listDoctors(accessToken),
+        consultationsApi.listPatients(accessToken),
+        consultationsApi.listNurses(accessToken),
+      ]);
+      setDoctorOptions(docs);
+      setPatientOptions(pats);
+      setNurseOptions(nurses);
+    } catch {}
+  }, [accessToken]);
 
   useEffect(() => {
-    if (!accessToken || lookupLoaded) return;
-    Promise.all([
-      consultationsApi.listDoctors(accessToken),
-      consultationsApi.listPatients(accessToken),
-      consultationsApi.listNurses(accessToken),
-    ])
-      .then(([docs, pats, nurses]) => {
-        setDoctorOptions(docs);
-        setPatientOptions(pats);
-        setNurseOptions(nurses);
-        setLookupLoaded(true);
-      })
-      .catch(() => {});
-  }, [accessToken, lookupLoaded]);
+    fetchLookupData();
+  }, [fetchLookupData]);
 
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (modalOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
     } else {
-      const top = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
       document.body.style.overflow = "";
-      if (top) window.scrollTo(0, parseInt(top) * -1);
     }
     return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
       document.body.style.overflow = "";
     };
   }, [modalOpen]);
+
+  useEffect(() => {
+    if (modalOpen) fetchLookupData();
+  }, [modalOpen, fetchLookupData]);
+
   const [modalDoctorId, setModalDoctorId] = useState("");
   const [modalPatientId, setModalPatientId] = useState("");
   const [modalNurseId, setModalNurseId] = useState("");
@@ -146,7 +144,7 @@ export default function AdminSchedulePage() {
       }
     }
     try {
-      await createMutation.mutateAsync({
+      const result = await createMutation.mutateAsync({
         doctorId: modalDoctorId,
         patientId: modalPatientId,
         nurseId: modalNurseId || undefined,
@@ -156,13 +154,35 @@ export default function AdminSchedulePage() {
           ? { scheduledDate: modalDate, scheduledStartTime: modalStartTime, scheduledEndTime: modalEndTime }
           : {}),
       });
-      setModalOpen(false);
+      setCreatedSession(result);
       sessionsQuery.refetch();
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       setModalError(Array.isArray(msg) ? msg.join(", ") : (msg ?? err?.message ?? "Failed to create session."));
     }
   };
+
+  const [createdSession, setCreatedSession] = useState<ConsultationSessionDto | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+    setCreatedSession(null);
+  }, []);
+
+  const handleCopyLink = useCallback(
+    (sid: string) => {
+      navigator.clipboard.writeText(`${origin}/join/${sid}`);
+      setCopiedId(sid);
+      setTimeout(() => setCopiedId(null), 2000);
+    },
+    [origin],
+  );
 
   const [detail, setDetail] = useState<ConsultationSessionDto | null>(null);
 
@@ -191,23 +211,91 @@ export default function AdminSchedulePage() {
       />
 
       {/* Create Session Modal */}
-      <div className={`fixed min-h-screen py-4 sm:py-20 flex items-center justify-center inset-0 z-[9999999] transition-all duration-300 ${modalOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <div
+        className={`fixed min-h-screen py-4 sm:py-20 flex items-center justify-center inset-0 z-[9999999] transition-all duration-300 ${modalOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+        onWheel={(e) => e.stopPropagation()}
+      >
         <div
           className={`absolute inset-0 transition-all duration-300 ${modalOpen ? "bg-background/20 backdrop-blur-[10px]" : "bg-background/0 backdrop-blur-none"}`}
-          onClick={() => setModalOpen(false)}
+          onClick={closeModal}
         />
-        <div className={`${modalOpen ? "scale-100 opacity-100" : "scale-60 opacity-0"} transition-all duration-300 w-[calc(100%-2rem)] sm:w-[450px] max-w-[450px] max-h-[88vh] sm:max-h-[85vh] relative bg-card border border-cultured rounded-lg flex flex-col shadow-2xl`}>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-cultured">
-            <h3 className="font-semibold text-sm">{modalSessionType === "INSTANT" ? "Instant Consultation" : "Scheduled Consultation"}</h3>
-            <button
-              onClick={() => setModalOpen(false)}
-              className="w-5 h-5 rounded-full border border-cultured bg-gradient-gray flex items-center justify-center hover:bg-white/10 transition-colors"
-            >
-              <XIcon size={10} />
-            </button>
-          </div>
+        <div className={`${modalOpen ? "scale-100 opacity-100" : "scale-60 opacity-0"} transition-all duration-300 w-[calc(100%-2rem)] sm:w-[450px] max-w-[450px] max-h-[88vh] sm:max-h-[85vh] relative bg-card border border-cultured rounded-lg shadow-2xl overflow-y-auto overscroll-contain no-scrollbar`}>
+          {createdSession ? (
+            <>
+              <div className="sticky top-0 z-10 bg-card flex items-center justify-between px-5 py-4 border-b border-cultured">
+                <h3 className="font-semibold text-sm">Session Created</h3>
+                <button
+                  onClick={closeModal}
+                  className="w-5 h-5 rounded-full border border-cultured bg-gradient-gray flex items-center justify-center hover:bg-white/10 transition-colors"
+                >
+                  <XIcon size={10} />
+                </button>
+              </div>
 
-          <form onSubmit={handleCreate} className="flex-1 overflow-y-auto overscroll-contain p-5 space-y-5">
+              <div className="p-5 space-y-5">
+                <div className="flex flex-col items-center gap-3 py-2 text-center">
+                  <CheckCircleIcon size={40} className="text-emerald-400" weight="fill" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Consultation created successfully</p>
+                    <p className="text-xs text-accent">
+                      Session{" "}
+                      <span className="font-mono text-white">{createdSession.sessionId}</span>{" "}
+                      is ready. Share the link below with participants.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs text-accent mb-2">
+                    <LinkIcon size={11} />
+                    Direct Link
+                  </label>
+                  <div className="flex items-center gap-2 bg-background/50 border border-cultured rounded-lg px-3 py-2.5">
+                    <span className="flex-1 text-xs font-mono text-white truncate">
+                      {`${origin}/join/${createdSession.sessionId}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLink(createdSession.sessionId)}
+                      className="shrink-0 flex items-center gap-1 text-xs transition-colors"
+                    >
+                      {copiedId === createdSession.sessionId ? (
+                        <>
+                          <CheckIcon size={13} className="text-emerald-400" />
+                          <span className="text-emerald-400">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <CopyIcon size={13} className="text-accent" />
+                          <span className="text-accent hover:text-white">Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="w-full py-2.5 rounded-lg bg-gradient-primary text-sm font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="sticky top-0 z-10 bg-card flex items-center justify-between px-5 py-4 border-b border-cultured">
+                <h3 className="font-semibold text-sm">{modalSessionType === "INSTANT" ? "Instant Consultation" : "Scheduled Consultation"}</h3>
+                <button
+                  onClick={closeModal}
+                  className="w-5 h-5 rounded-full border border-cultured bg-gradient-gray flex items-center justify-center hover:bg-white/10 transition-colors"
+                >
+                  <XIcon size={10} />
+                </button>
+              </div>
+
+          <form onSubmit={handleCreate} className="p-5 space-y-5">
             <div>
               <label className="block text-xs text-accent mb-2">Session Type</label>
               <div className="grid grid-cols-2 gap-2 p-1 border border-cultured rounded-lg">
@@ -340,6 +428,8 @@ export default function AdminSchedulePage() {
               )}
             </button>
           </form>
+            </>
+          )}
         </div>
       </div>
 
@@ -428,6 +518,37 @@ export default function AdminSchedulePage() {
                     </span>
                   )}
                 </div>
+
+                {(detail.sessionStatus === "CREATED" || detail.sessionStatus === "IN_CALL") && (
+                  <div className="border-t border-cultured pt-4 space-y-2">
+                    <p className="text-xs text-accent font-medium flex items-center gap-1.5">
+                      <LinkIcon size={11} />
+                      Direct Link
+                    </p>
+                    <div className="flex items-center gap-2 bg-background/50 border border-cultured rounded-lg px-3 py-2.5">
+                      <span className="flex-1 text-xs font-mono text-white truncate">
+                        {`${origin}/join/${detail.sessionId}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyLink(detail.sessionId)}
+                        className="shrink-0 flex items-center gap-1 text-xs transition-colors"
+                      >
+                        {copiedId === detail.sessionId ? (
+                          <>
+                            <CheckIcon size={13} className="text-emerald-400" />
+                            <span className="text-emerald-400">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <CopyIcon size={13} className="text-accent" />
+                            <span className="text-accent hover:text-white">Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

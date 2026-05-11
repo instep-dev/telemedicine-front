@@ -8,6 +8,7 @@ import { authStore } from "@/services/auth/auth.store";
 import { useAiResultsQuery, useAiRetryMutation, useAiStatusStream } from "@/services/ai/ai.queries";
 import type { AiSsePayload } from "@/services/ai/ai.queries";
 import type { AiResultItemDto } from "@/services/ai/ai.dto";
+import { aiApi } from "@/services/ai/ai.api";
 import { CalendarCheckIcon } from "@phosphor-icons/react/dist/ssr";
 import { formatDuration } from "@/hooks/useDurationFormat";
 import { getInitials } from "@/hooks/useInitials";
@@ -293,7 +294,7 @@ const TaskCard = ({ task, onRetry, isRetrying, onViewSummary }: TaskCardProps) =
             <div onClick={(e) => e.stopPropagation()}>
               <button 
                 onClick={() => onViewSummary(task.consultationId)}
-                className="px-2 py-1 border border-cultured bg-gradient-card rounded-md flex items-center gap-x-0.5 text-xs"
+                className="px-2 py-1.5 border border-cultured bg-gradient-card rounded-md flex items-center gap-x-0.5 text-xs"
                 >
                 View Summary
                 <ArrowUpRightIcon/>
@@ -336,7 +337,7 @@ export default function AiSummary() {
     return () => unsubscribe();
   }, []);
 
-  const { data, isLoading, error, isFetching } = useAiResultsQuery(
+  const { data, isLoading, error, isFetching, refetch } = useAiResultsQuery(
     accessToken,
     {
       limit: ITEMS_PER_PAGE,
@@ -345,13 +346,22 @@ export default function AiSummary() {
       search: searchQuery ? searchQuery : undefined,
     },
     true,
-    false, // polling disabled — SSE handles live updates
+    false,
   );
+
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
 
   useAiStatusStream(accessToken, (payload: AiSsePayload) => {
     setSseActive(true);
-    setAllItems(prev =>
-      prev.map(item =>
+    setAllItems(prev => {
+      const exists = prev.some(item => item.id === payload.noteId);
+      if (!exists) {
+        // New item not yet in list — fetch fresh data to include it
+        setTimeout(() => refetchRef.current(), 0);
+        return prev;
+      }
+      return prev.map(item =>
         item.id === payload.noteId
           ? {
               ...item,
@@ -366,8 +376,8 @@ export default function AiSummary() {
               transcribedAt: payload.transcribedAt ?? item.transcribedAt,
             }
           : item,
-      ),
-    );
+      );
+    });
   });
 
   const retryMutation = useAiRetryMutation(accessToken);
@@ -459,6 +469,31 @@ export default function AiSummary() {
       failed: visibleItems.filter((item) => getStatusBucket(item.aiStatus) === "failed"),
     };
   }, [visibleItems]);
+
+  const hasInProgressItems = grouped.inProgress.length > 0;
+
+  // Polling fallback: SSE can miss events if AI finishes before connection is established.
+  // Poll every 5s when items are still in-progress to guarantee real-time status sync.
+  useEffect(() => {
+    if (!hasInProgressItems || !accessToken) return;
+
+    const poll = async () => {
+      try {
+        const fresh = await aiApi.getAiResults(accessToken, {
+          limit: ITEMS_PER_PAGE,
+          sort: "newest",
+          search: searchQuery || undefined,
+        });
+        setAllItems(prev => {
+          const freshById = new Map(fresh.data.map(i => [i.id, i]));
+          return prev.map(i => freshById.get(i.id) ?? i);
+        });
+      } catch {}
+    };
+
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [hasInProgressItems, accessToken, searchQuery]);
 
   const filterData = [
     { title: "All", value: "all", count: visibleItems.length },
@@ -582,7 +617,7 @@ export default function AiSummary() {
                 {/* Mobile: horizontal swipe kanban */}
                 <div className="flex items-start gap-4 overflow-x-auto px-4 py-4 sm:hidden no-scrollbar snap-x snap-mandatory">
                   {kanbanColumns.map((column) => (
-                    <div key={column.key} className="min-w-[82vw] snap-start space-y-3 rounded-lg border border-cultured bg-card/50 p-4">
+                    <div key={column.key} className="min-w-[82vw] snap-center space-y-3 rounded-lg border border-cultured bg-card/50 p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-semibold text-white">{column.title}</h3>

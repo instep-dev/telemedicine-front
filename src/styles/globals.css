@@ -995,3 +995,26 @@ span.flatpickr-weekday,
 .apexcharts-gridline {
   @apply !stroke-[#393939];
 }
+
+/* ── react-toastify dark theme matching app palette ── */
+:root {
+  --toastify-color-dark: #1e1f22;
+  --toastify-text-color-dark: #f0f0f0;
+  --toastify-color-progress-dark: #465fff;
+}
+
+.Toastify__toast--dark {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.Toastify__close-button--dark {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.Toastify__close-button--dark:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
