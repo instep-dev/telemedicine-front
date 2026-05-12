@@ -71,6 +71,7 @@ const RemoteParticipantTile = React.memo(function RemoteParticipantTile({
 
 type DeviceOption = { deviceId: string; label: string };
 type RemoteParticipantEntry = { sid: string; identity: string };
+type ParticipantRole = "DOCTOR" | "PATIENT" | "NURSE";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -539,7 +540,68 @@ export default function ConsultationSessionPage() {
 
   const isConnecting = !connected && !errMsg;
   const hasRemote = remoteParticipants.length > 0;
-  const isSplitView = remoteParticipants.length >= 2;
+  const getParticipantRole = useCallback((identity: string): ParticipantRole | null => {
+    const value = `${identity} ${participantNamesRef.current[identity] ?? ""}`.toLowerCase();
+    if (value.includes("doctor") || value.includes("dokter")) return "DOCTOR";
+    if (value.includes("patient") || value.includes("pasien")) return "PATIENT";
+    if (value.includes("nurse") || value.includes("perawat")) return "NURSE";
+    return null;
+  }, []);
+
+  const nonNurseParticipants = remoteParticipants.filter((p) => getParticipantRole(p.identity) !== "NURSE");
+  const explicitDoctorParticipant = remoteParticipants.find((p) => getParticipantRole(p.identity) === "DOCTOR");
+  const doctorParticipant = explicitDoctorParticipant
+    ?? (isPatient ? nonNurseParticipants[0] : undefined)
+    ?? (isNurse ? nonNurseParticipants[0] : undefined);
+  const explicitPatientParticipant = remoteParticipants.find(
+    (p) => getParticipantRole(p.identity) === "PATIENT" && p.sid !== doctorParticipant?.sid,
+  );
+  const patientParticipant = explicitPatientParticipant
+    ?? (isDoctor ? nonNurseParticipants.find((p) => p.sid !== doctorParticipant?.sid) : undefined)
+    ?? (isNurse ? nonNurseParticipants.find((p) => p.sid !== doctorParticipant?.sid) : undefined);
+  const nurseParticipant = remoteParticipants.find((p) => getParticipantRole(p.identity) === "NURSE");
+
+  const renderEmptyTile = (label: string) => (
+    <div className="relative flex-1 h-full w-full overflow-hidden bg-[#3c4043] flex items-center justify-center text-white/30 text-xs sm:text-sm">
+      {label}
+    </div>
+  );
+
+  const renderLocalTile = (label: string) => (
+    <div className="relative flex-1 h-full w-full overflow-hidden">
+      <div ref={localRef} className="w-full h-full" />
+
+      {(!connected || isVoiceMode || !camOn) && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#3c4043]">
+          <UserCircleIcon size={48} weight="thin" className="text-white/25 sm:hidden" />
+          <UserCircleIcon size={64} weight="thin" className="text-white/25 hidden sm:block" />
+        </div>
+      )}
+
+      <div className="absolute bottom-3 left-3 pointer-events-none">
+        <span className="bg-black/50 backdrop-blur-sm text-white/90 text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg">
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+
+  const renderRemoteTile = (
+    participant: RemoteParticipantEntry | undefined,
+    emptyLabel: string,
+    isSplitTile = true,
+  ) => {
+    if (!participant) return renderEmptyTile(emptyLabel);
+    return (
+      <RemoteParticipantTile
+        sid={participant.sid}
+        displayName={participantNamesRef.current[participant.identity] ?? participant.identity}
+        isSplitView={isSplitTile}
+        onMount={handleRemoteMount}
+        onUnmount={handleRemoteUnmount}
+      />
+    );
+  };
 
   // ── UI ───────────────────────────────────────────────────────────────────────
 
@@ -549,33 +611,39 @@ export default function ConsultationSessionPage() {
       {/* ═══ MAIN VIDEO AREA ═══ */}
       <div className="flex-1 relative overflow-hidden bg-[#3c4043] min-h-0">
 
-        {/*
-          Remote videos.
-          1 participant  → fullscreen (absolute inset-0)
-          2 participants → portrait-mobile: stacked top/bottom (flex-col)
-                           landscape / sm+:  side-by-side (sm:flex-row)
-        */}
-        <div
-          className={`absolute inset-0 flex ${
-            isSplitView
-              ? "flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/10"
-              : ""
-          }`}
-        >
-          {remoteParticipants.map(({ sid, identity }) => (
-            <RemoteParticipantTile
-              key={sid}
-              sid={sid}
-              displayName={participantNamesRef.current[identity] ?? identity}
-              isSplitView={isSplitView}
-              onMount={handleRemoteMount}
-              onUnmount={handleRemoteUnmount}
-            />
-          ))}
+        <div className="absolute inset-0 flex flex-col">
+          {(isNurse || nurseParticipant) && (
+            <div className="shrink-0 h-[88px] sm:h-[104px] flex items-center justify-center gap-2 bg-[#202124] border-b border-white/10 px-3">
+              <div className="relative h-[72px] sm:h-[88px] aspect-video rounded-lg overflow-hidden bg-[#3c4043] border border-white/10 shadow-xl">
+                {isNurse
+                  ? renderLocalTile(user?.name ?? "Nurse")
+                  : renderRemoteTile(nurseParticipant, "Nurse belum hadir", false)}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-1 min-h-0">
+            {isNurse ? (
+              <div className="flex flex-1 min-h-0 flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+                {renderRemoteTile(doctorParticipant, "Doctor belum hadir")}
+                {renderRemoteTile(patientParticipant, "Patient belum hadir")}
+              </div>
+            ) : isPatient ? (
+              <div className="flex flex-1 min-h-0 flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+                {renderLocalTile(user?.name ?? "Patient")}
+                {renderRemoteTile(doctorParticipant, "Doctor belum hadir")}
+              </div>
+            ) : (
+              <div className="flex flex-1 min-h-0 flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+                {renderLocalTile(user?.name ?? "Doctor")}
+                {renderRemoteTile(patientParticipant, "Patient belum hadir")}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Placeholder when no remote participants or voice mode */}
-        {(!connected || isVoiceMode || !hasRemote) && (
+        {/* Placeholder when connecting or voice mode */}
+        {(!connected || isVoiceMode) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 sm:gap-4 pointer-events-none">
             <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-[#5f6368] flex items-center justify-center shadow-xl">
               <UserCircleIcon size={48} weight="thin" className="text-white/40 sm:hidden" />
@@ -593,9 +661,7 @@ export default function ConsultationSessionPage() {
                 ? isConnecting
                   ? "Connecting..."
                   : "Failed to connect"
-                : isVoiceMode
-                ? "Voice call in progress"
-                : "Waiting for other participant..."}
+                : "Voice call in progress"}
             </p>
           </div>
         )}
@@ -616,28 +682,6 @@ export default function ConsultationSessionPage() {
           </div>
         )}
 
-        {/*
-          Local PiP — scales down on small screens.
-          Mobile: 100px wide  |  sm: 140px  |  md+: 200px
-        */}
-        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
-          <div className="w-[100px] sm:w-[140px] md:w-[200px] aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-[#202124] border border-white/10 shadow-2xl relative">
-            <div ref={localRef} className="w-full h-full" />
-
-            {(!connected || isVoiceMode || !camOn) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#3c4043]">
-                <UserCircleIcon size={28} weight="thin" className="text-white/25 sm:hidden" />
-                <UserCircleIcon size={36} weight="thin" className="text-white/25 hidden sm:block" />
-              </div>
-            )}
-
-            <div className="absolute bottom-1 left-1.5 pointer-events-none">
-              <span className="bg-black/50 backdrop-blur-sm text-white/80 text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded">
-                {user?.name ?? "You"}
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ═══ BOTTOM CONTROL BAR ═══ */}
